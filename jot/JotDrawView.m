@@ -233,7 +233,13 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
     if (imageCanvassSize.height > CGRectGetHeight(self.bounds)) {
         imageCanvassSize = CGSizeMake(CGRectGetHeight(self.bounds) * imageAspectRatio, CGRectGetHeight(self.bounds));
     }
-    [backgroundImage drawInRect:CGRectMake(0.f, 0.f, imageCanvassSize.width, imageCanvassSize.height)];
+    CGRect imageRect = CGRectMake(
+        (self.bounds.size.width / 2) - imageCanvassSize.width / 2,
+        (self.bounds.size.height / 2) - imageCanvassSize.height / 2,
+        imageCanvassSize.width,
+        imageCanvassSize.height,
+    );
+    [backgroundImage drawInRect:imageRect];
     
     [self drawAllPaths];
     
