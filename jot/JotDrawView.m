@@ -237,7 +237,7 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
         (self.bounds.size.width / 2) - imageCanvassSize.width / 2,
         (self.bounds.size.height / 2) - imageCanvassSize.height / 2,
         imageCanvassSize.width,
-        imageCanvassSize.height,
+        imageCanvassSize.height
     );
     [backgroundImage drawInRect:imageRect];
     
