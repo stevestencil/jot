@@ -228,7 +228,12 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
     
     UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, scale);
     
-    [backgroundImage drawInRect:CGRectMake(0.f, 0.f, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds))];
+    CGFloat imageAspectRatio = backgroundImage.size.width / backgroundImage.size.height;
+    CGSize imageCanvassSize = CGSizeMake(CGRectGetWidth(self.bounds), CGRectGetWidth(self.bounds) / imageAspectRatio);
+    if (imageCanvassSize.height > CGRectGetHeight(self.bounds)) {
+        imageCanvassSize = CGSizeMake(CGRectGetHeight(self.bounds) * imageAspectRatio, CGRectGetHeight(self.bounds));
+    }
+    [backgroundImage drawInRect:CGRectMake(0.f, 0.f, imageCanvassSize.width, imageCanvassSize.height)];
     
     [self drawAllPaths];
     
