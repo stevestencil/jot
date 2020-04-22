@@ -33,7 +33,8 @@ typedef NS_ENUM(NSUInteger, JotViewState){
      *  The text editing state, where the contents of
      *  the text string can be edited with the keyboard.
      */
-    JotViewStateEditingText
+    JotViewStateEditingText,
+    JotViewStateImage
 };
 
 @import UIKit;
@@ -174,6 +175,10 @@ typedef NS_ENUM(NSUInteger, JotViewState){
  *  Clears only the text, leaving the drawing alone.
  */
 - (void)clearText;
+
+- (void)clearImages;
+
+- (void)addBackgroundImage:(UIImage*)image;
 
 /**
  *  Overlays the drawing and text on the given background image at the full

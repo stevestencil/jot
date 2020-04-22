@@ -13,6 +13,7 @@
 #import <Masonry/Masonry.h>
 #import "UIImage+Jot.h"
 #import "JotDrawingContainer.h"
+#import "JotImageView.h"
 
 @interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotDrawingContainerDelegate>
 
@@ -24,6 +25,7 @@
 @property (nonatomic, strong) JotDrawView *drawView;
 @property (nonatomic, strong) JotTextEditView *textEditView;
 @property (nonatomic, strong) JotTextView *textView;
+@property (nonatomic, strong) JotImageView *imageView;
 
 @end
 
@@ -38,6 +40,7 @@
         _textEditView.delegate = self;
         _textView = [JotTextView new];
         _drawingContainer = [JotDrawingContainer new];
+        _imageView = [JotImageView new];
         self.drawingContainer.delegate = self;
         
         _font = self.textView.font;
@@ -84,6 +87,11 @@
     self.view.backgroundColor = [UIColor clearColor];
     self.drawingContainer.clipsToBounds = YES;
     
+    [self.view addSubview:self.imageView];
+    [self.imageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.equalTo(self.view);
+    }];
+    
     [self.view addSubview:self.drawingContainer];
     [self.drawingContainer mas_makeConstraints:^(MASConstraintMaker *make) {
         make.edges.equalTo(self.view);
@@ -129,7 +137,7 @@
         self.tapRecognizer.enabled =
         self.panRecognizer.enabled =
         self.pinchRecognizer.enabled =
-        self.rotationRecognizer.enabled = (state == JotViewStateText);
+        self.rotationRecognizer.enabled = (state == JotViewStateText) || (state == JotViewStateImage);
     }
 }
 
@@ -249,6 +257,7 @@
 {
     [self clearDrawing];
     [self clearText];
+    [self clearImages];
 }
 
 - (void)clearDrawing
@@ -262,12 +271,24 @@
     [self.textView clearText];
 }
 
+- (void)clearImages {
+    [self.imageView clearImages];
+}
+
+- (void)addBackgroundImage:(UIImage *)image {
+    [self.imageView addImageView:image];
+}
+
 #pragma mark - Output UIImage
 
 - (UIImage *)drawOnImage:(UIImage *)image
 {
-    UIImage *drawImage = [self.drawView drawOnImage:image];
-    
+    UIImage *drawImage;
+    if (!image) {
+        drawImage = [self.imageView renderImage];
+    } else {
+        drawImage = [self.drawView drawOnImage:image];
+    }
     return [self.textView drawTextOnImage:drawImage];
 }
 
@@ -314,6 +335,9 @@
 
 - (void)handleTapGesture:(UIGestureRecognizer *)recognizer
 {
+    if (self.state == JotViewStateImage) {
+        return;
+    }
     if (!(self.state == JotViewStateEditingText)) {
         self.state = JotViewStateEditingText;
     }
@@ -321,11 +345,19 @@
 
 - (void)handlePanGesture:(UIGestureRecognizer *)recognizer
 {
+    if (self.state == JotViewStateImage) {
+        [self.imageView handlePanGesture:recognizer];
+        return;
+    }
     [self.textView handlePanGesture:recognizer];
 }
 
 - (void)handlePinchOrRotateGesture:(UIGestureRecognizer *)recognizer
 {
+    if (self.state == JotViewStateImage) {
+        [self.imageView handlePinchOrRotateGesture:recognizer];
+        return;
+    }
     [self.textView handlePinchOrRotateGesture:recognizer];
 }
 
