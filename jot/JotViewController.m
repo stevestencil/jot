@@ -425,8 +425,6 @@
     if ([gestureRecognizer isKindOfClass:[UITapGestureRecognizer class]]) {
         return YES;
     }
-    NSLog(@"first - %@", NSStringFromClass([gestureRecognizer class]));
-    NSLog(@"second - %@", NSStringFromClass([otherGestureRecognizer class]));
     return NO;
 }
 
