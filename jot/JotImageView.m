@@ -31,7 +31,6 @@
         self.referenceOffset = CGPointZero;
         _referenceRotateTransform = CGAffineTransformIdentity;
         _currentRotateTransform = CGAffineTransformIdentity;
-//        self.userInteractionEnabled = NO;
     }
     return self;
 }
@@ -40,17 +39,9 @@
     return self.imageViews.count;
 }
 
-#pragma mark - Layout Subviews
-
-//- (void)layoutSubviews
-//{
-//    [super layoutSubviews];
-//
-//    if (CGPointEqualToPoint(self.referenceCenter, CGPointZero)) {
-//        self.imageView.center = CGPointMake(CGRectGetMidX(self.bounds),
-//                                            CGRectGetMidY(self.bounds));
-//    }
-//}
+- (void)cancelEditing {
+    self.movingImageView = nil;
+}
 
 #pragma mark - Undo
 
@@ -72,8 +63,15 @@
     imageView.contentMode = UIViewContentModeScaleAspectFit;
     imageView.userInteractionEnabled = YES;
     [self addSubview:imageView];
+    CGFloat aspectRatio = image.size.width / image.size.height;
+    CGSize imageViewSize = CGSizeMake(self.frame.size.width, self.frame.size.width / aspectRatio);
+    if (imageViewSize.height > self.frame.size.height) {
+        imageViewSize.height = self.frame.size.height;
+        imageViewSize.width = self.frame.size.height * aspectRatio;
+    }
     [imageView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.edges.equalTo(self);
+        make.width.equalTo(@(imageViewSize.width));
+        make.height.equalTo(@(imageViewSize.height));
         make.center.equalTo(self);
     }];
     [self.imageViews addObject:imageView];
@@ -89,12 +87,7 @@
     return nil;
 }
 
-- (void)handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer
-{
-    if (![recognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
-//        return;
-    }
-    
+- (void)handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer {
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
@@ -117,7 +110,6 @@
             
         case UIGestureRecognizerStateEnded: {
             self.referenceOffset = CGPointZero;
-            self.movingImageView = nil;
             break;
         }
             
@@ -159,7 +151,6 @@
         }
             
         case UIGestureRecognizerStateEnded: {
-            self.movingImageView = nil;
             if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
                 
                 self.referenceRotateTransform = [self.class applyRecognizer:recognizer toTransform:self.referenceRotateTransform];
@@ -218,6 +209,13 @@
 
 - (BOOL)isMovingView {
     return !!self.movingImageView;
+}
+
+- (void)setMovingImageView:(UIImageView *)movingImageView {
+    _movingImageView.layer.borderWidth = 0.0;
+    _movingImageView = movingImageView;
+    _movingImageView.layer.borderWidth = 2.0;
+    _movingImageView.layer.borderColor = [[UIColor yellowColor] CGColor];
 }
 
 @end

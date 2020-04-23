@@ -17,5 +17,6 @@
 - (UIImage*) renderImage;
 - (void)addImageView:(UIImage*)image;
 - (void) clearImages;
+- (void) cancelEditing;
 
 @end

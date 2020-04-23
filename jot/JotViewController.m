@@ -143,6 +143,10 @@
         self.panRecognizer.enabled =
         self.pinchRecognizer.enabled =
         self.rotationRecognizer.enabled = (state == JotViewStateText) || (state == JotViewStateImage);
+        
+        if (state != JotViewStateImage) {
+            [self.imageView cancelEditing];
+        }
     }
 }
 
@@ -292,9 +296,11 @@
 
 - (UIImage *)drawOnImage:(UIImage *)image
 {
+    [self.imageView cancelEditing];
     UIImage *drawImage;
     if (!image) {
         drawImage = [self.imageView renderImage];
+        drawImage = [self.drawView drawOnImage:drawImage];
     } else {
         drawImage = [self.drawView drawOnImage:image];
     }
@@ -326,6 +332,7 @@
 
 - (UIImage *)renderImageWithSize:(CGSize)size
 {
+    [self.imageView cancelEditing];
     UIImage *renderDrawingImage = [self.drawView renderDrawingWithSize:size];
     
     return [self.textView drawTextOnImage:renderDrawingImage];
