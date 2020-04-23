@@ -69,11 +69,8 @@
         imageViewSize.height = self.frame.size.height;
         imageViewSize.width = self.frame.size.height * aspectRatio;
     }
-    [imageView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.width.equalTo(@(imageViewSize.width));
-        make.height.equalTo(@(imageViewSize.height));
-        make.center.equalTo(self);
-    }];
+    imageView.frame = CGRectMake(0, 0, imageViewSize.width, imageViewSize.height);
+    imageView.center = self.center;
     [self.imageViews addObject:imageView];
 }
 
