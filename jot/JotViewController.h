@@ -235,5 +235,6 @@ typedef NS_ENUM(NSUInteger, JotViewState){
  *  @param isEditing    YES if entering edit (keyboard text entry) mode, NO if exiting edit mode
  */
 - (void)jotViewController:(JotViewController *)jotViewController isEditingText:(BOOL)isEditing;
+- (void)jotViewController:(JotViewController *)jotViewController didChangeState:(JotViewState)state;
 
 @end

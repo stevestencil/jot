@@ -137,7 +137,6 @@
             && [self.delegate respondsToSelector:@selector(jotViewController:isEditingText:)]) {
             [self.delegate jotViewController:self isEditingText:YES];
         }
-        
         self.drawingContainer.multipleTouchEnabled =
         self.tapRecognizer.enabled =
         self.panRecognizer.enabled =
@@ -146,6 +145,10 @@
         
         if (state != JotViewStateImage) {
             [self.imageView cancelEditing];
+        }
+        
+        if ([self.delegate respondsToSelector:@selector(jotViewController:didChangeState:)]) {
+            [self.delegate jotViewController:self didChangeState:_state];
         }
     }
 }
