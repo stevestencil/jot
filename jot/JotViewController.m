@@ -21,6 +21,7 @@
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchRecognizer;
 @property (nonatomic, strong) UIRotationGestureRecognizer *rotationRecognizer;
 @property (nonatomic, strong) UIPanGestureRecognizer *panRecognizer;
+@property (nonatomic, strong) UILongPressGestureRecognizer *longPressRecognizer;
 @property (nonatomic, strong, readwrite) JotDrawingContainer *drawingContainer;
 @property (nonatomic, strong) JotDrawView *drawView;
 @property (nonatomic, strong) JotTextEditView *textEditView;
@@ -69,6 +70,9 @@
         
         _tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
         self.tapRecognizer.delegate = self;
+        
+        _longPressRecognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPressGesture:)];
+        self.longPressRecognizer.delegate = self;
     }
     
     return self;
@@ -116,6 +120,7 @@
     [self.drawingContainer addGestureRecognizer:self.panRecognizer];
     [self.drawingContainer addGestureRecognizer:self.rotationRecognizer];
     [self.drawingContainer addGestureRecognizer:self.pinchRecognizer];
+    [self.drawingContainer addGestureRecognizer:self.longPressRecognizer];
 }
 
 #pragma mark - Properties
@@ -279,6 +284,10 @@
     [self.imageView addImageView:image];
 }
 
+- (BOOL)photosAdded {
+    return self.imageView.imageCount > 0;
+}
+
 #pragma mark - Output UIImage
 
 - (UIImage *)drawOnImage:(UIImage *)image
@@ -336,6 +345,7 @@
 - (void)handleTapGesture:(UIGestureRecognizer *)recognizer
 {
     if (self.state == JotViewStateImage) {
+        self.state = JotViewStateDrawing;
         return;
     }
     if (!(self.state == JotViewStateEditingText)) {
@@ -346,7 +356,7 @@
 - (void)handlePanGesture:(UIGestureRecognizer *)recognizer
 {
     if (self.state == JotViewStateImage) {
-        [self.imageView handlePanGesture:recognizer];
+        [self.imageView handleLongPressGesture:(UILongPressGestureRecognizer*)recognizer];
         return;
     }
     [self.textView handlePanGesture:recognizer];
@@ -359,6 +369,15 @@
         return;
     }
     [self.textView handlePinchOrRotateGesture:recognizer];
+}
+
+- (void) handleLongPressGesture:(UILongPressGestureRecognizer*)recognizer {
+    if (self.photosAdded) {
+        if (recognizer.state == UIGestureRecognizerStateBegan) {
+            self.state = JotViewStateImage;
+        }
+        [self handlePanGesture:recognizer];
+    }
 }
 
 #pragma mark - JotDrawingContainer Delegate
@@ -396,6 +415,8 @@
     if ([gestureRecognizer isKindOfClass:[UITapGestureRecognizer class]]) {
         return YES;
     }
+    NSLog(@"first - %@", NSStringFromClass([gestureRecognizer class]));
+    NSLog(@"second - %@", NSStringFromClass([otherGestureRecognizer class]));
     return NO;
 }
 

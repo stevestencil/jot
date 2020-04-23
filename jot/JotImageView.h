@@ -9,7 +9,10 @@
 
 @interface JotImageView : UIView
 
-- (void)handlePanGesture:(UIGestureRecognizer *)recognizer;
+@property (nonatomic, readonly) NSInteger imageCount;
+@property (nonatomic, readonly) BOOL isMovingView;
+
+- (void)handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer;
 - (void)handlePinchOrRotateGesture:(UIGestureRecognizer *)recognizer;
 - (UIImage*) renderImage;
 - (void)addImageView:(UIImage*)image;

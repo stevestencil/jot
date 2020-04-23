@@ -13,7 +13,7 @@
 @property (nonatomic, strong) NSMutableArray<UIImageView*> *imageViews;
 @property (nonatomic, strong) UIImageView *movingImageView;
 @property (nonatomic, assign) CGFloat scale;
-@property (nonatomic, assign) CGPoint referenceCenter;
+@property (nonatomic, assign) CGPoint referenceOffset;
 @property (nonatomic, assign) CGAffineTransform referenceRotateTransform;
 @property (nonatomic, assign) CGAffineTransform currentRotateTransform;
 @property (nonatomic, strong) UIPinchGestureRecognizer *activePinchRecognizer;
@@ -28,12 +28,16 @@
         self.backgroundColor = [UIColor clearColor];
         self.clipsToBounds = YES;
         _scale = 1.f;
-        self.referenceCenter = CGPointZero;
+        self.referenceOffset = CGPointZero;
         _referenceRotateTransform = CGAffineTransformIdentity;
         _currentRotateTransform = CGAffineTransformIdentity;
 //        self.userInteractionEnabled = NO;
     }
     return self;
+}
+
+- (NSInteger)imageCount {
+    return self.imageViews.count;
 }
 
 #pragma mark - Layout Subviews
@@ -85,30 +89,34 @@
     return nil;
 }
 
-- (void)handlePanGesture:(UIGestureRecognizer *)recognizer
+- (void)handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer
 {
-    if (![recognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
-        return;
+    if (![recognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
+//        return;
     }
     
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
-            CGPoint point = [recognizer locationInView:recognizer.view];
+            CGPoint point = [recognizer locationInView:self];
             UIImageView *view = [self imageViewAtPoint:point];
             self.movingImageView = view;
-            self.referenceCenter = view.center;
+            // add 5 points to make the view move slightly to indicate it's selected
+            self.referenceOffset = CGPointMake(view.center.x - point.x + 5.0,
+                                               view.center.y - point.y - 5.0);
+            self.movingImageView.center = CGPointMake(point.x + self.referenceOffset.x,
+                                                      point.y + self.referenceOffset.y);
             break;
         }
             
         case UIGestureRecognizerStateChanged: {
-            CGPoint panTranslation = [(UIPanGestureRecognizer *)recognizer translationInView:self];
-            self.movingImageView.center = CGPointMake(self.referenceCenter.x + panTranslation.x,
-                                                      self.referenceCenter.y + panTranslation.y);;
+            CGPoint location = [recognizer locationInView:self];
+            self.movingImageView.center = CGPointMake(location.x + self.referenceOffset.x,
+                                                      location.y + self.referenceOffset.y);
             break;
         }
             
         case UIGestureRecognizerStateEnded: {
-            self.referenceCenter = self.movingImageView.center;
+            self.referenceOffset = CGPointZero;
             self.movingImageView = nil;
             break;
         }
@@ -206,6 +214,10 @@
         _imageViews = [NSMutableArray new];
     }
     return _imageViews;
+}
+
+- (BOOL)isMovingView {
+    return !!self.movingImageView;
 }
 
 @end
