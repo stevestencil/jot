@@ -15,7 +15,7 @@
 #import "JotDrawingContainer.h"
 #import "JotImageView.h"
 
-@interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotDrawingContainerDelegate>
+@interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotDrawingContainerDelegate, JotImageViewDelegate, JotDrawViewDelegate>
 
 @property (nonatomic, strong) UITapGestureRecognizer *tapRecognizer;
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchRecognizer;
@@ -37,6 +37,7 @@
     if ((self = [super init])) {
         
         _drawView = [JotDrawView new];
+        _drawView.delegate = self;
         _textEditView = [JotTextEditView new];
         _textEditView.delegate = self;
         _textView = [JotTextView new];
@@ -440,6 +441,40 @@
     
     if ([self.delegate respondsToSelector:@selector(jotViewController:isEditingText:)]) {
         [self.delegate jotViewController:self isEditingText:NO];
+    }
+}
+
+#pragma mark - JotImageViewDelegate
+
+- (void) jotImageView:(JotImageView*)jotImageView didBeginMovingImageView:(UIImageView*)imageView {
+    if ([self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
+        [self.delegate jotViewController:self didBeginMovingImageView:imageView];
+    }
+}
+
+- (void) jotImageView:(JotImageView *)jotImageView didMoveImageView:(UIImageView *)imageView {
+    if ([self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
+        [self.delegate jotViewController:self didMoveImageView:imageView];
+    }
+}
+
+- (void) jotImageView:(JotImageView*)jotImageView didEndMovingImageView:(UIImageView*)imageView {
+    if ([self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
+        [self.delegate jotViewController:self didEndMovingImageView:imageView];
+    }
+}
+
+#pragma mark - JotDrawViewDelegate
+
+- (void)jotDrawViewDidBeginDrawing:(JotDrawView *)jotDrawView {
+    if ([self.delegate respondsToSelector:@selector(jotViewControllerDidBeginDrawing:)]) {
+        [self.delegate jotViewControllerDidBeginDrawing:self];
+    }
+}
+
+- (void)jotDrawViewDidEndDrawing:(JotDrawView *)jotDrawView {
+    if ([self.delegate respondsToSelector:@selector(jotViewControllerDidEndDrawing:)]) {
+        [self.delegate jotViewControllerDidEndDrawing:self];
     }
 }
 

@@ -9,11 +9,22 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 
+@class JotDrawView;
+
+@protocol JotDrawViewDelegate <NSObject>
+
+- (void) jotDrawViewDidBeginDrawing:(JotDrawView*)jotDrawView;
+- (void) jotDrawViewDidEndDrawing:(JotDrawView*)jotDrawView;
+
+@end
+
 /**
  *  Private class to handle touch drawing. Change the properties
  *  in a JotViewController instance to configure this private class.
  */
 @interface JotDrawView : UIView
+
+@property (weak, nonatomic) id <JotDrawViewDelegate> delegate;
 
 /**
  *  Set to YES if you want the stroke width to be constant,

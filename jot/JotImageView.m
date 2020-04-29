@@ -57,20 +57,28 @@
 
 #pragma mark - Properties
 
-- (void)addImageView:(UIImage *)image {
-    
-    UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
-    imageView.contentMode = UIViewContentModeScaleAspectFit;
-    imageView.userInteractionEnabled = YES;
-    [self addSubview:imageView];
+- (CGSize) sizeForImage:(UIImage*)image withScale:(CGFloat)scale {
     CGFloat aspectRatio = image.size.width / image.size.height;
     CGSize imageViewSize = CGSizeMake(self.frame.size.width, self.frame.size.width / aspectRatio);
     if (imageViewSize.height > self.frame.size.height) {
         imageViewSize.height = self.frame.size.height;
         imageViewSize.width = self.frame.size.height * aspectRatio;
     }
-    imageView.frame = CGRectMake(0, 0, imageViewSize.width, imageViewSize.height);
-    imageView.center = self.center;
+    return CGSizeMake(imageViewSize.width * scale, imageViewSize.height * scale);
+}
+- (void)addImageView:(UIImage *)image {
+    
+    UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
+    imageView.contentMode = UIViewContentModeScaleAspectFit;
+    imageView.userInteractionEnabled = YES;
+    [self addSubview:imageView];
+    CGSize imageViewSize = [self sizeForImage:image withScale:1.0];
+    [imageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.width.equalTo(self.mas_width).multipliedBy(imageViewSize.width / CGRectGetWidth(self.frame));
+        make.height.equalTo(self.mas_height).multipliedBy(imageViewSize.height / CGRectGetHeight(self.frame));
+        make.centerX.equalTo(self.mas_right).multipliedBy(0.5);
+        make.centerY.equalTo(self.mas_bottom).multipliedBy(0.5);
+    }];
     [self.imageViews addObject:imageView];
 }
 
@@ -93,20 +101,41 @@
             // add 5 points to make the view move slightly to indicate it's selected
             self.referenceOffset = CGPointMake(view.center.x - point.x + 5.0,
                                                view.center.y - point.y - 5.0);
-            self.movingImageView.center = CGPointMake(point.x + self.referenceOffset.x,
-                                                      point.y + self.referenceOffset.y);
+            CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
+                                            point.y + self.referenceOffset.y);
+            [self.movingImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.width.equalTo(self.mas_width).multipliedBy(CGRectGetWidth(self.movingImageView.frame) / CGRectGetWidth(self.frame));
+                make.height.equalTo(self.mas_height).multipliedBy(CGRectGetHeight(self.movingImageView.frame) / CGRectGetHeight(self.frame));
+                make.centerX.equalTo(self.mas_right).multipliedBy(newCenter.x / CGRectGetWidth(self.frame));
+                make.centerY.equalTo(self.mas_bottom).multipliedBy(newCenter.y / CGRectGetHeight(self.frame));
+            }];
+            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
+                [self.delegate jotImageView:self didBeginMovingImageView:view];
+            }
             break;
         }
             
         case UIGestureRecognizerStateChanged: {
-            CGPoint location = [recognizer locationInView:self];
-            self.movingImageView.center = CGPointMake(location.x + self.referenceOffset.x,
-                                                      location.y + self.referenceOffset.y);
+            CGPoint point = [recognizer locationInView:self];
+            CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
+                                            point.y + self.referenceOffset.y);
+            [self.movingImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.width.equalTo(self.mas_width).multipliedBy(CGRectGetWidth(self.movingImageView.frame) / CGRectGetWidth(self.frame));
+                make.height.equalTo(self.mas_height).multipliedBy(CGRectGetHeight(self.movingImageView.frame) / CGRectGetHeight(self.frame));
+                make.centerX.equalTo(self.mas_right).multipliedBy(newCenter.x / CGRectGetWidth(self.frame));
+                make.centerY.equalTo(self.mas_bottom).multipliedBy(newCenter.y / CGRectGetHeight(self.frame));
+            }];
+            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
+                [self.delegate jotImageView:self didMoveImageView:self.movingImageView];
+            }
             break;
         }
             
         case UIGestureRecognizerStateEnded: {
             self.referenceOffset = CGPointZero;
+            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
+                [self.delegate jotImageView:self didEndMovingImageView:self.movingImageView];
+            }
             break;
         }
             
@@ -117,7 +146,6 @@
 
 - (void)handlePinchOrRotateGesture:(UIGestureRecognizer *)recognizer
 {
-    
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
@@ -127,6 +155,9 @@
                 self.activeRotationRecognizer = (UIRotationGestureRecognizer *)recognizer;
             } else {
                 self.activePinchRecognizer = (UIPinchGestureRecognizer *)recognizer;
+            }
+            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
+                [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
             }
             break;
         }
@@ -138,12 +169,22 @@
             if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
                 self.currentRotateTransform = [self.class applyRecognizer:recognizer toTransform:self.referenceRotateTransform];
             }
-            
-            currentTransform = [self.class applyRecognizer:self.activePinchRecognizer toTransform:currentTransform];
+                        
+//            currentTransform = [self.class applyRecognizer:self.activePinchRecognizer toTransform:currentTransform];
             currentTransform = [self.class applyRecognizer:self.activeRotationRecognizer toTransform:currentTransform];
-            
-            self.movingImageView.transform = currentTransform;
-            
+//            self.movingImageView.transform = currentTransform;
+
+            [self.movingImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                CGFloat scale = self.activePinchRecognizer.scale * self.scale;
+                CGSize size = [self sizeForImage:self.movingImageView.image withScale:scale];
+                make.width.equalTo(self.mas_width).multipliedBy(size.width / CGRectGetWidth(self.frame));
+                make.height.equalTo(self.mas_height).multipliedBy(size.height / CGRectGetHeight(self.frame));
+                make.centerX.equalTo(self.mas_right).multipliedBy(CGRectGetMidX(self.movingImageView.frame) / CGRectGetWidth(self.frame));
+                make.centerY.equalTo(self.mas_bottom).multipliedBy(CGRectGetMidY(self.movingImageView.frame) / CGRectGetHeight(self.frame));
+            }];
+            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
+                [self.delegate jotImageView:self didMoveImageView:self.movingImageView];
+            }
             break;
         }
             
@@ -160,6 +201,9 @@
                 self.activePinchRecognizer = nil;
             }
             
+            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
+                [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
+            }
             break;
         }
             

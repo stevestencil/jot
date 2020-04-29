@@ -37,7 +37,7 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
     if ((self = [super init])) {
         
         self.backgroundColor = [UIColor clearColor];
-        
+                
         _strokeWidth = 10.f;
         _strokeColor = [UIColor blackColor];
         
@@ -94,6 +94,9 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
 
 - (void)drawTouchBeganAtPoint:(CGPoint)touchPoint
 {
+    if ([self.delegate respondsToSelector:@selector(jotDrawViewDidBeginDrawing:)]) {
+        [self.delegate jotDrawViewDidBeginDrawing:self];
+    }
     self.lastVelocity = self.initialVelocity;
     self.lastWidth = self.strokeWidth;
     self.pointsCounter = 0;
@@ -150,9 +153,38 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
     
     self.lastVelocity = self.initialVelocity;
     self.lastWidth = self.strokeWidth;
+    
+    if ([self.delegate respondsToSelector:@selector(jotDrawViewDidEndDrawing:)]) {
+        [self.delegate jotDrawViewDidEndDrawing:self];
+    }
 }
 
 #pragma mark - Drawing
+
+// - (void) drawGridIfNeeded {
+//     if (self.shouldDrawGrid) {
+//         CGFloat size = self.gridSize;
+//         CGFloat x = fmod(CGRectGetWidth(self.frame), size) / 2;
+//         [[self.gridColor colorWithAlphaComponent:0.5] setStroke];
+//         UIBezierPath *path = [[UIBezierPath alloc] init];
+//         [path moveToPoint:CGPointMake(x, 0)];
+//         [path addLineToPoint:CGPointMake(x, CGRectGetMaxY(self.frame))];
+//         while (x < CGRectGetWidth(self.frame)) {
+//             [path moveToPoint:CGPointMake(x + size, 0)];
+//             [path addLineToPoint:CGPointMake(x + size, CGRectGetMaxY(self.frame))];
+//             x += size;
+//         }
+//         NSInteger y = fmod(CGRectGetHeight(self.frame), size) / 2;
+//         [path moveToPoint:CGPointMake(0, y)];
+//         [path addLineToPoint:CGPointMake(CGRectGetMaxX(self.frame), y)];
+//         while (y < CGRectGetHeight(self.frame)) {
+//             [path moveToPoint:CGPointMake(0, y + size)];
+//             [path addLineToPoint:CGPointMake(CGRectGetMaxX(self.frame), y + size)];
+//             y += size;
+//         }
+//         [path stroke];
+//     }
+// }
 
 - (void)drawBitmap
 {
@@ -183,7 +215,6 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
 - (void)drawRect:(CGRect)rect
 {
     [self.cachedImage drawInRect:rect];
-
     [self.bezierPath jotDrawBezier];
 }
 
@@ -227,7 +258,7 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
     CGFloat scale = size.width / CGRectGetWidth(self.bounds);
     
     UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, scale);
-    
+        
     CGFloat imageAspectRatio = backgroundImage.size.width / backgroundImage.size.height;
     CGSize imageCanvassSize = CGSizeMake(CGRectGetWidth(self.bounds), CGRectGetWidth(self.bounds) / imageAspectRatio);
     if (imageCanvassSize.height > CGRectGetHeight(self.bounds)) {
@@ -240,7 +271,6 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
         imageCanvassSize.height
     );
     [backgroundImage drawInRect:imageRect];
-    
     [self drawAllPaths];
     
     UIImage *drawnImage = UIGraphicsGetImageFromCurrentImageContext();
