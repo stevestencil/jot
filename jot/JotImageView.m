@@ -8,6 +8,9 @@
 #import "JotImageView.h"
 #import "Masonry.h"
 
+#define DEGREES_TO_RADIANS(x) (M_PI * (x) / 180.0)
+#define RADIANS_TO_DEGREES(x) (x * (180 / M_PI))
+
 @interface JotImageView ()
 
 @property (nonatomic, strong) NSMutableArray<JotImageViewContainer*> *imageViews;
@@ -76,6 +79,20 @@
         make.centerX.equalTo(self.mas_right).multipliedBy(center.x / CGRectGetWidth(self.frame));
         make.centerY.equalTo(self.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.frame));
     }];
+    CGFloat angle = RADIANS_TO_DEGREES(atan2f(transform.b, transform.a));
+    if (angle >= -5 && angle <= 5) {
+        transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(0));
+    } else if (angle >= 85 && angle <= 95) {
+        transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(90));
+    } else if (angle >= -95 && angle <= -85) {
+        transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(-90));
+    } else if ((angle >= 175 && angle <= 185)) {
+        transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(180));
+    } else if (angle >= -185 && angle <= -175) {
+        transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(-180));
+    }
+    NSLog(@"%f", angle);
+    
     view.transform = transform;
 }
 
@@ -271,10 +288,9 @@
 }
 
 - (void)setMovingImageView:(JotImageViewContainer *)movingImageView {
-    _movingImageView.layer.borderWidth = 0.0;
+    [_movingImageView setSelected:NO];
     _movingImageView = movingImageView;
-    _movingImageView.layer.borderWidth = 2.0;
-    _movingImageView.layer.borderColor = [[UIColor yellowColor] CGColor];
+    [_movingImageView setSelected:YES];
 }
 
 @end
