@@ -14,4 +14,6 @@
 @property (weak, nonatomic, readonly) UIImageView *imageView;
 @property (nonatomic) CGFloat scale;
 
+- (void) setSelected:(BOOL)selected;
+
 @end

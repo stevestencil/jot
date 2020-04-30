@@ -13,7 +13,7 @@
 + (instancetype) imageViewContainerWithImage:(UIImage*)image {
     JotImageViewContainer *container = [JotImageViewContainer new];
     [container addImageViewWithImage:image];
-    container.backgroundColor = [UIColor orangeColor];
+    container.backgroundColor = [UIColor clearColor];
     container.scale = 1.0f;
     return container;
 }
@@ -43,4 +43,12 @@
     return self.imageView.transform;
 }
 
+- (void) setSelected:(BOOL)selected {
+    if (!selected) {
+        self.imageView.layer.borderWidth = 0.0;
+    } else {
+        self.imageView.layer.borderWidth = 2.0;
+        self.imageView.layer.borderColor = [[UIColor yellowColor] CGColor];
+    }
+}
 @end
