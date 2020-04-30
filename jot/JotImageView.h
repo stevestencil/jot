@@ -6,14 +6,15 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "JotImageViewContainer.h"
 
 @class JotImageView;
 
 @protocol JotImageViewDelegate <NSObject>
 
-- (void) jotImageView:(JotImageView*)jotImageView didBeginMovingImageView:(UIImageView*)imageView;
-- (void) jotImageView:(JotImageView *)jotImageView didMoveImageView:(UIImageView *)imageView;
-- (void) jotImageView:(JotImageView*)jotImageView didEndMovingImageView:(UIImageView*)imageView;
+- (void) jotImageView:(JotImageView*)jotImageView didBeginMovingImageView:(JotImageViewContainer*)imageView;
+- (void) jotImageView:(JotImageView *)jotImageView didMoveImageView:(JotImageViewContainer *)imageView;
+- (void) jotImageView:(JotImageView*)jotImageView didEndMovingImageView:(JotImageViewContainer*)imageView;
 
 @end
 
