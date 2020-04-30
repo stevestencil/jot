@@ -70,15 +70,7 @@
     return CGSizeMake(imageViewSize.width * scale, imageViewSize.height * scale);
 }
 
-- (void) resizeView:(JotImageViewContainer*)view withSize:(CGSize)size andCenter:(CGPoint)center withTransformation:(CGAffineTransform)transform {
-    CGFloat widthPercentage = MAX(0.15f, floorf((size.width / CGRectGetWidth(self.frame)) * 100) / 100);
-    CGFloat heightPercentage = MAX(0.15f, floorf((size.height / CGRectGetHeight(self.frame)) * 100) / 100);
-    [view mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.width.equalTo(self.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
-        make.height.equalTo(self.mas_height).multipliedBy(MAX(0.15f, heightPercentage));
-        make.centerX.equalTo(self.mas_right).multipliedBy(center.x / CGRectGetWidth(self.frame));
-        make.centerY.equalTo(self.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.frame));
-    }];
+- (void) rotateView:(JotImageViewContainer*)view withTransform:(CGAffineTransform)transform {
     CGFloat angle = RADIANS_TO_DEGREES(atan2f(transform.b, transform.a));
     if (angle >= -5 && angle <= 5) {
         transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(0));
@@ -91,9 +83,18 @@
     } else if (angle >= -185 && angle <= -175) {
         transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(-180));
     }
-    NSLog(@"%f", angle);
-    
     view.transform = transform;
+}
+
+- (void) resizeView:(JotImageViewContainer*)view withSize:(CGSize)size andCenter:(CGPoint)center {
+    CGFloat widthPercentage = MAX(0.15f, floorf((size.width / CGRectGetWidth(self.frame)) * 100) / 100);
+    CGFloat heightPercentage = MAX(0.15f, floorf((size.height / CGRectGetHeight(self.frame)) * 100) / 100);
+    [view mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.width.equalTo(self.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
+        make.height.equalTo(self.mas_height).multipliedBy(MAX(0.15f, heightPercentage));
+        make.centerX.equalTo(self.mas_right).multipliedBy(center.x / CGRectGetWidth(self.frame));
+        make.centerY.equalTo(self.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.frame));
+    }];
 }
 
 - (void) moveView:(JotImageViewContainer*)view toCenter:(CGPoint)center {
@@ -117,7 +118,7 @@
     [self addSubview:containerView];
     CGSize imageViewSize = [self sizeForImage:image withScale:1.0];
     CGRect frame = [self frameForViewWithSize:imageViewSize withCenterPoint:self.center];
-    [self resizeView:containerView withSize:frame.size andCenter:self.center withTransformation:containerView.transform];
+    [self resizeView:containerView withSize:frame.size andCenter:self.center];
     [self.imageViews addObject:containerView];
 }
 
@@ -181,8 +182,49 @@
     }
 }
 
-- (void)handlePinchOrRotateGesture:(UIGestureRecognizer *)recognizer
-{
+- (void) handlePinchGesture:(UIPinchGestureRecognizer*)recognizer {
+    switch (recognizer.state) {
+        case UIGestureRecognizerStateBegan: {
+            CGPoint point = [recognizer locationInView:self];
+            self.movingImageView = [self imageViewAtPoint:point];
+            if (!self.movingImageView) {
+                return;
+            }
+            self.activePinchRecognizer = (UIPinchGestureRecognizer *)recognizer;
+            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
+                [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
+            }
+            break;
+        }
+            
+        case UIGestureRecognizerStateChanged: {
+            if (!self.movingImageView) {
+                return;
+            }
+            CGFloat scale = self.activePinchRecognizer.scale * self.scale;
+            CGSize size = [self sizeForImage:self.movingImageView.imageView.image withScale:scale];
+            [self resizeView:self.movingImageView withSize:size andCenter:self.movingImageView.center];
+            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
+                [self.delegate jotImageView:self didMoveImageView:self.movingImageView];
+            }
+            break;
+        }
+            
+        case UIGestureRecognizerStateEnded: {
+            self.scale *= [(UIPinchGestureRecognizer *)recognizer scale];
+            self.activePinchRecognizer = nil;
+            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
+                [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
+            }
+            break;
+        }
+            
+        default:
+            break;
+    }
+}
+
+- (void) handleRotateGesture:(UIRotationGestureRecognizer*)recognizer {
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
@@ -207,16 +249,9 @@
                 return;
             }
             CGAffineTransform currentTransform = self.referenceRotateTransform;
-            
-            if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
-                self.currentRotateTransform = [self.class applyRecognizer:recognizer toTransform:self.referenceRotateTransform];
-            }
-                        
-            currentTransform = [self.class applyRecognizer:self.activeRotationRecognizer toTransform:currentTransform];
-            CGFloat scale = self.activePinchRecognizer.scale * self.scale;
-            CGSize size = [self sizeForImage:self.movingImageView.imageView.image withScale:scale];
-            [self resizeView:self.movingImageView withSize:size andCenter:self.movingImageView.center withTransformation:currentTransform];
-            
+            self.currentRotateTransform = CGAffineTransformRotate(self.referenceRotateTransform, recognizer.rotation);
+            currentTransform = CGAffineTransformRotate(currentTransform, self.activeRotationRecognizer.rotation);
+            [self rotateView:self.movingImageView withTransform:currentTransform];
             if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
                 [self.delegate jotImageView:self didMoveImageView:self.movingImageView];
             }
@@ -224,18 +259,9 @@
         }
             
         case UIGestureRecognizerStateEnded: {
-            if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
-                
-                self.referenceRotateTransform = [self.class applyRecognizer:recognizer toTransform:self.referenceRotateTransform];
-                self.currentRotateTransform = self.referenceRotateTransform;
-                self.activeRotationRecognizer = nil;
-                
-            } else if ([recognizer isKindOfClass:[UIPinchGestureRecognizer class]]) {
-                
-                self.scale *= [(UIPinchGestureRecognizer *)recognizer scale];
-                self.activePinchRecognizer = nil;
-            }
-            
+            self.referenceRotateTransform = CGAffineTransformRotate(self.referenceRotateTransform, recognizer.rotation);
+            self.currentRotateTransform = self.referenceRotateTransform;
+            self.activeRotationRecognizer = nil;
             if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
                 [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
             }
@@ -247,22 +273,22 @@
     }
 }
 
-+ (CGAffineTransform)applyRecognizer:(UIGestureRecognizer *)recognizer toTransform:(CGAffineTransform)transform
-{
-    if (!recognizer
-        || !([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]
-             || [recognizer isKindOfClass:[UIPinchGestureRecognizer class]])) {
-        return transform;
-    }
-    
-    if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
-        
-        return CGAffineTransformRotate(transform, [(UIRotationGestureRecognizer *)recognizer rotation]);
-    }
-    
-    CGFloat scale = [(UIPinchGestureRecognizer *)recognizer scale];
-    return CGAffineTransformScale(transform, scale, scale);
-}
+//+ (CGAffineTransform)applyRecognizer:(UIGestureRecognizer *)recognizer toTransform:(CGAffineTransform)transform
+//{
+//    if (!recognizer
+//        || !([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]
+//             || [recognizer isKindOfClass:[UIPinchGestureRecognizer class]])) {
+//        return transform;
+//    }
+//
+//    if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
+//
+//        return CGAffineTransformRotate(transform, [(UIRotationGestureRecognizer *)recognizer rotation]);
+//    }
+//
+//    CGFloat scale = [(UIPinchGestureRecognizer *)recognizer scale];
+//    return CGAffineTransformScale(transform, scale, scale);
+//}
 
 #pragma mark - Image Render
 

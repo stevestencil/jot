@@ -25,7 +25,8 @@
 @property (nonatomic, readonly) BOOL isMovingView;
 
 - (void)handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer;
-- (void)handlePinchOrRotateGesture:(UIGestureRecognizer *)recognizer;
+- (void) handlePinchGesture:(UIPinchGestureRecognizer*)recognizer;
+- (void) handleRotateGesture:(UIRotationGestureRecognizer*)recognizer;
 - (UIImage*) renderImage;
 - (void)addImageView:(UIImage*)image;
 - (void) clearImages;

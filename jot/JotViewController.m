@@ -376,7 +376,11 @@
 - (void)handlePinchOrRotateGesture:(UIGestureRecognizer *)recognizer
 {
     if (self.state == JotViewStateImage) {
-        [self.imageView handlePinchOrRotateGesture:recognizer];
+        if ([recognizer isKindOfClass:[UIPinchGestureRecognizer class]]) {
+            [self.imageView handlePinchGesture:(UIPinchGestureRecognizer*)recognizer];
+        } else if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
+            [self.imageView handleRotateGesture:(UIRotationGestureRecognizer*)recognizer];
+        }
         return;
     }
     [self.textView handlePinchOrRotateGesture:recognizer];
@@ -418,7 +422,7 @@
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
 {
-    return YES;
+    return NO;
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
