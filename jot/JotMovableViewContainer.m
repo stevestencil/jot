@@ -5,16 +5,16 @@
 //  Created by Steve Stencil on 4/21/20.
 //
 
-#import "JotImageView.h"
+#import "JotMovableViewContainer.h"
 #import "Masonry.h"
 
 #define DEGREES_TO_RADIANS(x) (M_PI * (x) / 180.0)
 #define RADIANS_TO_DEGREES(x) (x * (180 / M_PI))
 
-@interface JotImageView ()
+@interface JotMovableViewContainer ()
 
-@property (nonatomic, strong) NSMutableArray<JotImageViewContainer*> *imageViews;
-@property (nonatomic, strong) JotImageViewContainer *movingImageView;
+@property (nonatomic, strong) NSMutableArray<JotImageViewContainer*> *movableView;
+@property (nonatomic, strong) JotImageViewContainer *movingView;
 @property (nonatomic, assign) CGFloat scale;
 @property (nonatomic, assign) CGPoint referenceOffset;
 @property (nonatomic, assign) CGAffineTransform referenceRotateTransform;
@@ -25,7 +25,7 @@
 
 @end
 
-@implementation JotImageView
+@implementation JotMovableViewContainer
 
 - (instancetype)init {
     if (self = [super init]) {
@@ -40,11 +40,11 @@
 }
 
 - (NSInteger)imageCount {
-    return self.imageViews.count;
+    return self.movableView.count;
 }
 
 - (void)cancelEditing {
-    self.movingImageView = nil;
+    self.movingView = nil;
 }
 
 #pragma mark - Undo
@@ -52,10 +52,10 @@
 - (void)clearImages
 {
     self.scale = 1.f;
-    while (self.imageViews.count) {
-        JotImageViewContainer *imageView = [self.imageViews firstObject];
+    while (self.movableView.count) {
+        JotImageViewContainer *imageView = [self.movableView firstObject];
         [imageView removeFromSuperview];
-        [self.imageViews removeObject:imageView];
+        [self.movableView removeObject:imageView];
     }
     [UIView transitionWithView:self duration:0.2f
                        options:UIViewAnimationOptionTransitionCrossDissolve
@@ -78,9 +78,9 @@
 }
 
 - (void) captureUndoSnapshot {
-    if (self.movingImageView) {
-        [self.movingImageView captureUndoObject];
-        [self.viewsLastEdited addObject:self.movingImageView];
+    if (self.movingView) {
+        [self.movingView captureUndoObject];
+        [self.viewsLastEdited addObject:self.movingView];
         if ([self.delegate respondsToSelector:@selector(jotImageViewDidCaptureUndoSnapshot:)]) {
             [self.delegate jotImageViewDidCaptureUndoSnapshot:self];
         }
@@ -109,9 +109,9 @@
     CGSize imageViewSize = [self sizeForImage:image withScale:1.0];
     CGRect frame = [self frameForViewWithSize:imageViewSize withCenterPoint:self.center];
     [containerView resizeWithSize:frame.size];
-    [self.imageViews addObject:containerView];
+    [self.movableView addObject:containerView];
     [self.viewsLastEdited addObject:containerView];
-    self.movingImageView = containerView;
+    self.movingView = containerView;
     if ([self.delegate respondsToSelector:@selector(jotImageViewDidCaptureUndoSnapshot:)]) {
         [self.delegate jotImageViewDidCaptureUndoSnapshot:self];
     }
@@ -121,7 +121,7 @@
 
 - (JotImageViewContainer*) imageViewAtPoint:(CGPoint)point {
     JotImageViewContainer *view = (JotImageViewContainer*)[self hitTest:point withEvent:nil];
-    if ([self.imageViews containsObject:view]) {
+    if ([self.movableView containsObject:view]) {
         return view;
     }
     return nil;
@@ -132,8 +132,8 @@
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
             JotImageViewContainer *view = [self imageViewAtPoint:point];
-            self.movingImageView = view;
-            if (!self.movingImageView) {
+            self.movingView = view;
+            if (!self.movingView) {
                 return;
             }
             [self captureUndoSnapshot];
@@ -142,33 +142,33 @@
                                                view.center.y - point.y - 5.0);
             CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
                                             point.y + self.referenceOffset.y);
-            [self.movingImageView moveViewToCenter:newCenter];
+            [self.movingView moveViewToCenter:newCenter];
             
-            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
+            if (self.movingView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
                 [self.delegate jotImageView:self didBeginMovingImageView:view];
             }
             break;
         }
             
         case UIGestureRecognizerStateChanged: {
-            if (!self.movingImageView) {
+            if (!self.movingView) {
                 return;
             }
             CGPoint point = [recognizer locationInView:self];
             CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
                                             point.y + self.referenceOffset.y);
-            [self.movingImageView moveViewToCenter:newCenter];
+            [self.movingView moveViewToCenter:newCenter];
             
-            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
-                [self.delegate jotImageView:self didMoveImageView:self.movingImageView];
+            if (self.movingView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
+                [self.delegate jotImageView:self didMoveImageView:self.movingView];
             }
             break;
         }
             
         case UIGestureRecognizerStateEnded: {
             self.referenceOffset = CGPointZero;
-            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
-                [self.delegate jotImageView:self didEndMovingImageView:self.movingImageView];
+            if (self.movingView && [self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
+                [self.delegate jotImageView:self didEndMovingImageView:self.movingView];
             }
             break;
         }
@@ -182,8 +182,8 @@
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
-            self.movingImageView = [self imageViewAtPoint:point];
-            if (!self.movingImageView) {
+            self.movingView = [self imageViewAtPoint:point];
+            if (!self.movingView) {
                 return;
             }
             // If rotate is also active we only want to capture a snapshot once
@@ -193,21 +193,21 @@
                 [self captureUndoSnapshot];
             }
             self.activePinchRecognizer = (UIPinchGestureRecognizer *)recognizer;
-            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
-                [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
+            if (self.movingView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
+                [self.delegate jotImageView:self didBeginMovingImageView:self.movingView];
             }
             break;
         }
             
         case UIGestureRecognizerStateChanged: {
-            if (!self.movingImageView) {
+            if (!self.movingView) {
                 return;
             }
             CGFloat scale = self.activePinchRecognizer.scale * self.scale;
-            CGSize size = [self sizeForImage:self.movingImageView.imageView.image withScale:scale];
-            [self.movingImageView resizeWithSize:size];
-            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
-                [self.delegate jotImageView:self didMoveImageView:self.movingImageView];
+            CGSize size = [self sizeForImage:self.movingView.imageView.image withScale:scale];
+            [self.movingView resizeWithSize:size];
+            if (self.movingView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
+                [self.delegate jotImageView:self didMoveImageView:self.movingView];
             }
             break;
         }
@@ -215,8 +215,8 @@
         case UIGestureRecognizerStateEnded: {
             self.scale *= [(UIPinchGestureRecognizer *)recognizer scale];
             self.activePinchRecognizer = nil;
-            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
-                [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
+            if (self.movingView && [self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
+                [self.delegate jotImageView:self didBeginMovingImageView:self.movingView];
             }
             break;
         }
@@ -230,29 +230,29 @@
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
-            self.movingImageView = [self imageViewAtPoint:point];
-            if (!self.movingImageView) {
+            self.movingView = [self imageViewAtPoint:point];
+            if (!self.movingView) {
                 return;
             }
             [self captureUndoSnapshot];
             self.currentRotateTransform = self.referenceRotateTransform;
             self.activeRotationRecognizer = (UIRotationGestureRecognizer *)recognizer;
-            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
-                [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
+            if (self.movingView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
+                [self.delegate jotImageView:self didBeginMovingImageView:self.movingView];
             }
             break;
         }
             
         case UIGestureRecognizerStateChanged: {
-            if (!self.movingImageView) {
+            if (!self.movingView) {
                 return;
             }
             CGAffineTransform currentTransform = self.referenceRotateTransform;
             self.currentRotateTransform = CGAffineTransformRotate(self.referenceRotateTransform, recognizer.rotation);
             currentTransform = CGAffineTransformRotate(currentTransform, self.activeRotationRecognizer.rotation);
-            self.movingImageView.transform = currentTransform;
-            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
-                [self.delegate jotImageView:self didMoveImageView:self.movingImageView];
+            self.movingView.transform = currentTransform;
+            if (self.movingView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
+                [self.delegate jotImageView:self didMoveImageView:self.movingView];
             }
             break;
         }
@@ -261,8 +261,8 @@
             self.referenceRotateTransform = CGAffineTransformRotate(self.referenceRotateTransform, recognizer.rotation);
             self.currentRotateTransform = self.referenceRotateTransform;
             self.activeRotationRecognizer = nil;
-            if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
-                [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
+            if (self.movingView && [self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
+                [self.delegate jotImageView:self didBeginMovingImageView:self.movingView];
             }
             break;
         }
@@ -301,21 +301,21 @@
 
 #pragma mark - Setters & Getters
 
-- (NSMutableArray<JotImageViewContainer *> *)imageViews {
-    if (!_imageViews) {
-        _imageViews = [NSMutableArray new];
+- (NSMutableArray<JotImageViewContainer *> *)movableView {
+    if (!_movableView) {
+        _movableView = [NSMutableArray new];
     }
-    return _imageViews;
+    return _movableView;
 }
 
 - (BOOL)isMovingView {
-    return !!self.movingImageView;
+    return !!self.movingView;
 }
 
-- (void)setMovingImageView:(JotImageViewContainer *)movingImageView {
-    [_movingImageView setSelected:NO];
-    _movingImageView = movingImageView;
-    [_movingImageView setSelected:YES];
+- (void)setMovingView:(JotImageViewContainer *)movingImageView {
+    [_movingView setSelected:NO];
+    _movingView = movingImageView;
+    [_movingView setSelected:YES];
 }
 
 - (NSMutableArray<JotImageViewContainer *> *)viewsLastEdited {

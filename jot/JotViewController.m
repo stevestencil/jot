@@ -13,7 +13,7 @@
 #import <Masonry/Masonry.h>
 #import "UIImage+Jot.h"
 #import "JotDrawingContainer.h"
-#import "JotImageView.h"
+#import "JotMovableViewContainer.h"
 
 @interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotDrawingContainerDelegate, JotImageViewDelegate>
 
@@ -26,7 +26,7 @@
 @property (nonatomic, strong) JotDrawView *drawView;
 @property (nonatomic, strong) JotTextEditView *textEditView;
 @property (nonatomic, strong) JotTextView *textView;
-@property (nonatomic, strong) JotImageView *imageView;
+@property (nonatomic, strong) JotMovableViewContainer *imageView;
 @property (nonatomic, strong) NSMutableArray<id> *viewsInEditOrder;
 
 @end
@@ -43,7 +43,7 @@
         _textView = [JotTextView new];
         _drawingContainer = [JotDrawingContainer new];
         self.drawingContainer.delegate = self;
-        _imageView = [JotImageView new];
+        _imageView = [JotMovableViewContainer new];
         self.imageView.delegate = self;
         
         _font = self.textView.font;
@@ -466,25 +466,25 @@
 
 #pragma mark - JotImageViewDelegate
 
-- (void) jotImageView:(JotImageView*)jotImageView didBeginMovingImageView:(UIImageView*)imageView {
+- (void) jotImageView:(JotMovableViewContainer*)jotImageView didBeginMovingImageView:(UIImageView*)imageView {
     if ([self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
         [self.delegate jotViewController:self didBeginMovingImageView:imageView];
     }
 }
 
-- (void) jotImageView:(JotImageView *)jotImageView didMoveImageView:(UIImageView *)imageView {
+- (void) jotImageView:(JotMovableViewContainer *)jotImageView didMoveImageView:(UIImageView *)imageView {
     if ([self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
         [self.delegate jotViewController:self didMoveImageView:imageView];
     }
 }
 
-- (void) jotImageView:(JotImageView*)jotImageView didEndMovingImageView:(UIImageView*)imageView {
+- (void) jotImageView:(JotMovableViewContainer*)jotImageView didEndMovingImageView:(UIImageView*)imageView {
     if ([self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
         [self.delegate jotViewController:self didEndMovingImageView:imageView];
     }
 }
 
-- (void) jotImageViewDidCaptureUndoSnapshot:(JotImageView *)jotImageView {
+- (void) jotImageViewDidCaptureUndoSnapshot:(JotMovableViewContainer *)jotImageView {
     [self.viewsInEditOrder addObject:jotImageView];
 }
 

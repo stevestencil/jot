@@ -8,18 +8,18 @@
 #import <UIKit/UIKit.h>
 #import "JotImageViewContainer.h"
 
-@class JotImageView;
+@class JotMovableViewContainer;
 
 @protocol JotImageViewDelegate <NSObject>
 
-- (void) jotImageView:(JotImageView*)jotImageView didBeginMovingImageView:(JotImageViewContainer*)imageView;
-- (void) jotImageView:(JotImageView *)jotImageView didMoveImageView:(JotImageViewContainer *)imageView;
-- (void) jotImageView:(JotImageView*)jotImageView didEndMovingImageView:(JotImageViewContainer*)imageView;
-- (void) jotImageViewDidCaptureUndoSnapshot:(JotImageView*)jotImageView;
+- (void) jotImageView:(JotMovableViewContainer*)jotImageView didBeginMovingImageView:(JotImageViewContainer*)imageView;
+- (void) jotImageView:(JotMovableViewContainer *)jotImageView didMoveImageView:(JotImageViewContainer *)imageView;
+- (void) jotImageView:(JotMovableViewContainer*)jotImageView didEndMovingImageView:(JotImageViewContainer*)imageView;
+- (void) jotImageViewDidCaptureUndoSnapshot:(JotMovableViewContainer*)jotImageView;
 
 @end
 
-@interface JotImageView : UIView
+@interface JotMovableViewContainer : UIView
 
 @property (weak, nonatomic) id <JotImageViewDelegate> delegate;
 @property (nonatomic, readonly) NSInteger imageCount;
