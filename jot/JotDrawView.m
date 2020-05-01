@@ -64,6 +64,12 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
     UIImage *previousImage = [self.cachedImages lastObject];
     self.cachedImage = previousImage;
     [self setNeedsDisplay];
+    [UIView transitionWithView:self duration:0.2f
+                       options:UIViewAnimationOptionTransitionCrossDissolve
+                    animations:^{
+                        [self setNeedsDisplay];
+                    }
+                    completion:nil];
 }
 
 - (void)clearDrawing

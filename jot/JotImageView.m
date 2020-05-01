@@ -57,12 +57,24 @@
         [imageView removeFromSuperview];
         [self.imageViews removeObject:imageView];
     }
+    [UIView transitionWithView:self duration:0.2f
+                       options:UIViewAnimationOptionTransitionCrossDissolve
+                    animations:^{
+                        [self setNeedsDisplay];
+                    }
+                    completion:nil];
 }
 
 - (void) undo {
     JotImageViewContainer *lastEdited = [self.viewsLastEdited lastObject];
     [lastEdited undo];
     [self.viewsLastEdited removeLastObject];
+    [UIView transitionWithView:self duration:0.2f
+                       options:UIViewAnimationOptionTransitionCrossDissolve
+                    animations:^{
+                        [self setNeedsDisplay];
+                    }
+                    completion:nil];
 }
 
 - (void) captureUndoSnapshot {
@@ -174,7 +186,12 @@
             if (!self.movingImageView) {
                 return;
             }
-            [self captureUndoSnapshot];
+            // If rotate is also active we only want to capture a snapshot once
+            // Otherwise we'll have to undo twice in order to reverse the pinch
+            // and rotate mutations
+            if (!self.activeRotationRecognizer) {
+                [self captureUndoSnapshot];
+            }
             self.activePinchRecognizer = (UIPinchGestureRecognizer *)recognizer;
             if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
                 [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
@@ -218,12 +235,8 @@
                 return;
             }
             [self captureUndoSnapshot];
-            if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
-                self.currentRotateTransform = self.referenceRotateTransform;
-                self.activeRotationRecognizer = (UIRotationGestureRecognizer *)recognizer;
-            } else {
-                self.activePinchRecognizer = (UIPinchGestureRecognizer *)recognizer;
-            }
+            self.currentRotateTransform = self.referenceRotateTransform;
+            self.activeRotationRecognizer = (UIRotationGestureRecognizer *)recognizer;
             if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
                 [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
             }
