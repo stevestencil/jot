@@ -42,8 +42,9 @@
         _textEditView.delegate = self;
         _textView = [JotTextView new];
         _drawingContainer = [JotDrawingContainer new];
-        _imageView = [JotImageView new];
         self.drawingContainer.delegate = self;
+        _imageView = [JotImageView new];
+        self.imageView.delegate = self;
         
         _font = self.textView.font;
         self.textEditView.font = self.font;
@@ -481,6 +482,10 @@
     if ([self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
         [self.delegate jotViewController:self didEndMovingImageView:imageView];
     }
+}
+
+- (void) jotImageViewDidCaptureUndoSnapshot:(JotImageView *)jotImageView {
+    [self.viewsInEditOrder addObject:jotImageView];
 }
 
 #pragma mark - Setters & Getters

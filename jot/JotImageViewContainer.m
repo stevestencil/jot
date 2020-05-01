@@ -14,6 +14,7 @@
 @interface JotImageViewContainer ()
 
 @property (nonatomic) CGFloat aspectRatio;
+@property (strong, nonatomic) NSMutableArray<NSDictionary*> *editHistory;
 
 @end
 
@@ -45,21 +46,57 @@
     [super layoutSubviews];
 }
 
-- (void) resizeWithSize:(CGSize)size andCenter:(CGPoint)center {
+- (void)didMoveToSuperview {
+    [super didMoveToSuperview];
+    self.center = self.superview.center;
+}
+
+#pragma mark - Undo
+
+- (void) captureUndoObject {
+    NSDictionary *object = @{
+        @"size": [NSValue valueWithCGSize:self.frame.size],
+        @"center": [NSValue valueWithCGPoint:self.center],
+        @"transform": [NSValue valueWithCGAffineTransform:self.transform]
+    };
+    [self.editHistory addObject:object];
+}
+
+- (void) undo {
+    NSDictionary *lastCapture = [self.editHistory lastObject];
+    if (!lastCapture) {
+        [self removeFromSuperview];
+        return;
+    }
+    CGSize size = [lastCapture[@"size"] CGSizeValue];
+    CGPoint center = [lastCapture[@"center"] CGPointValue];
+    CGAffineTransform transform = [lastCapture[@"transform"] CGAffineTransformValue];
+    
     CGFloat widthPercentage = MAX(0.15f, floorf((size.width / CGRectGetWidth(self.superview.frame)) * 100) / 100);
-//    CGFloat heightPercentage = MAX(0.15f, floorf((size.height / CGRectGetHeight(self.superview.frame)) * 100) / 100);
     [self mas_remakeConstraints:^(MASConstraintMaker *make) {
         make.width.equalTo(self.superview.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
         make.height.equalTo(self.mas_width).dividedBy(self.aspectRatio);
         make.centerX.equalTo(self.superview.mas_right).multipliedBy(center.x / CGRectGetWidth(self.superview.frame));
         make.centerY.equalTo(self.superview.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.superview.frame));
+    }];
+    self.transform = transform;
+    [self.editHistory removeLastObject];
+}
+
+#pragma mark - Moving, Resizing and Rotation
+
+- (void) resizeWithSize:(CGSize)size {
+    CGFloat widthPercentage = MAX(0.15f, floorf((size.width / CGRectGetWidth(self.superview.frame)) * 100) / 100);
+    [self mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.width.equalTo(self.superview.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
+        make.height.equalTo(self.mas_width).dividedBy(self.aspectRatio);
+        make.centerX.equalTo(self.superview.mas_right).multipliedBy(self.center.x / CGRectGetWidth(self.superview.frame));
+        make.centerY.equalTo(self.superview.mas_bottom).multipliedBy(self.center.y / CGRectGetHeight(self.superview.frame));
     }];
 }
 
 - (void) moveViewToCenter:(CGPoint)center {
-    CGRect currentFrame = self.frame;
-    CGFloat widthPercentage = floorf((CGRectGetWidth(currentFrame) / CGRectGetWidth(self.superview.frame)) * 100) / 100;
-//    CGFloat heightPercentage = floorf((CGRectGetHeight(currentFrame) / CGRectGetHeight(self.superview.frame)) * 100) / 100;
+    CGFloat widthPercentage = floorf((CGRectGetWidth(self.frame) / CGRectGetWidth(self.superview.frame)) * 100) / 100;
     [self mas_remakeConstraints:^(MASConstraintMaker *make) {
         make.width.equalTo(self.superview.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
         make.height.equalTo(self.mas_width).dividedBy(self.aspectRatio);
@@ -67,8 +104,6 @@
         make.centerY.equalTo(self.superview.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.superview.frame));
     }];
 }
-
-#pragma mark - Setters & Getters
 
 - (void)setTransform:(CGAffineTransform)transform {
     CGFloat angle = RADIANS_TO_DEGREES(atan2f(transform.b, transform.a));
@@ -90,6 +125,8 @@
     return self.imageView.transform;
 }
 
+#pragma mark - Setters & Getters
+
 - (void) setSelected:(BOOL)selected {
     if (!selected) {
         self.imageView.layer.borderWidth = 0.0;
@@ -97,6 +134,13 @@
         self.imageView.layer.borderWidth = 2.0;
         self.imageView.layer.borderColor = [[UIColor yellowColor] CGColor];
     }
+}
+
+- (NSMutableArray<NSDictionary *> *)editHistory {
+    if (!_editHistory) {
+        _editHistory = [NSMutableArray new];
+    }
+    return _editHistory;
 }
 
 @end

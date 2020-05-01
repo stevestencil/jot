@@ -21,6 +21,7 @@
 @property (nonatomic, assign) CGAffineTransform currentRotateTransform;
 @property (nonatomic, strong) UIPinchGestureRecognizer *activePinchRecognizer;
 @property (nonatomic, strong) UIRotationGestureRecognizer *activeRotationRecognizer;
+@property (nonatomic, strong) NSMutableArray<JotImageViewContainer*> *viewsLastEdited;
 
 @end
 
@@ -58,6 +59,22 @@
     }
 }
 
+- (void) undo {
+    JotImageViewContainer *lastEdited = [self.viewsLastEdited lastObject];
+    [lastEdited undo];
+    [self.viewsLastEdited removeLastObject];
+}
+
+- (void) captureUndoSnapshot {
+    if (self.movingImageView) {
+        [self.movingImageView captureUndoObject];
+        [self.viewsLastEdited addObject:self.movingImageView];
+        if ([self.delegate respondsToSelector:@selector(jotImageViewDidCaptureUndoSnapshot:)]) {
+            [self.delegate jotImageViewDidCaptureUndoSnapshot:self];
+        }
+    }
+}
+
 #pragma mark - Properties
 
 - (CGSize) sizeForImage:(UIImage*)image withScale:(CGFloat)scale {
@@ -79,8 +96,13 @@
     [self addSubview:containerView];
     CGSize imageViewSize = [self sizeForImage:image withScale:1.0];
     CGRect frame = [self frameForViewWithSize:imageViewSize withCenterPoint:self.center];
-    [containerView resizeWithSize:frame.size andCenter:self.center];
+    [containerView resizeWithSize:frame.size];
     [self.imageViews addObject:containerView];
+    [self.viewsLastEdited addObject:containerView];
+    self.movingImageView = containerView;
+    if ([self.delegate respondsToSelector:@selector(jotImageViewDidCaptureUndoSnapshot:)]) {
+        [self.delegate jotImageViewDidCaptureUndoSnapshot:self];
+    }
 }
 
 #pragma mark - Gestures
@@ -102,6 +124,7 @@
             if (!self.movingImageView) {
                 return;
             }
+            [self captureUndoSnapshot];
             // add 5 points to make the view move slightly to indicate it's selected
             self.referenceOffset = CGPointMake(view.center.x - point.x + 5.0,
                                                view.center.y - point.y - 5.0);
@@ -151,6 +174,7 @@
             if (!self.movingImageView) {
                 return;
             }
+            [self captureUndoSnapshot];
             self.activePinchRecognizer = (UIPinchGestureRecognizer *)recognizer;
             if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
                 [self.delegate jotImageView:self didBeginMovingImageView:self.movingImageView];
@@ -164,7 +188,7 @@
             }
             CGFloat scale = self.activePinchRecognizer.scale * self.scale;
             CGSize size = [self sizeForImage:self.movingImageView.imageView.image withScale:scale];
-            [self.movingImageView resizeWithSize:size andCenter:self.movingImageView.center];
+            [self.movingImageView resizeWithSize:size];
             if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
                 [self.delegate jotImageView:self didMoveImageView:self.movingImageView];
             }
@@ -193,6 +217,7 @@
             if (!self.movingImageView) {
                 return;
             }
+            [self captureUndoSnapshot];
             if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
                 self.currentRotateTransform = self.referenceRotateTransform;
                 self.activeRotationRecognizer = (UIRotationGestureRecognizer *)recognizer;
@@ -278,6 +303,13 @@
     [_movingImageView setSelected:NO];
     _movingImageView = movingImageView;
     [_movingImageView setSelected:YES];
+}
+
+- (NSMutableArray<JotImageViewContainer *> *)viewsLastEdited {
+    if (!_viewsLastEdited) {
+        _viewsLastEdited = [NSMutableArray new];
+    }
+    return _viewsLastEdited;
 }
 
 @end

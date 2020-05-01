@@ -15,7 +15,9 @@
 @property (nonatomic) CGFloat scale;
 
 - (void) setSelected:(BOOL)selected;
-- (void) resizeWithSize:(CGSize)size andCenter:(CGPoint)center;
+- (void) resizeWithSize:(CGSize)size;
 - (void) moveViewToCenter:(CGPoint)center;
+- (void) captureUndoObject;
+- (void) undo;
 
 @end

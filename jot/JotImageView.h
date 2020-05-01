@@ -15,6 +15,7 @@
 - (void) jotImageView:(JotImageView*)jotImageView didBeginMovingImageView:(JotImageViewContainer*)imageView;
 - (void) jotImageView:(JotImageView *)jotImageView didMoveImageView:(JotImageViewContainer *)imageView;
 - (void) jotImageView:(JotImageView*)jotImageView didEndMovingImageView:(JotImageViewContainer*)imageView;
+- (void) jotImageViewDidCaptureUndoSnapshot:(JotImageView*)jotImageView;
 
 @end
 
@@ -31,5 +32,6 @@
 - (void)addImageView:(UIImage*)image;
 - (void) clearImages;
 - (void) cancelEditing;
+- (void) undo;
 
 @end
