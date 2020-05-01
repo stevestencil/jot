@@ -15,7 +15,7 @@
 #import "JotDrawingContainer.h"
 #import "JotImageView.h"
 
-@interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotDrawingContainerDelegate, JotImageViewDelegate, JotDrawViewDelegate>
+@interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotDrawingContainerDelegate, JotImageViewDelegate>
 
 @property (nonatomic, strong) UITapGestureRecognizer *tapRecognizer;
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchRecognizer;
@@ -27,6 +27,7 @@
 @property (nonatomic, strong) JotTextEditView *textEditView;
 @property (nonatomic, strong) JotTextView *textView;
 @property (nonatomic, strong) JotImageView *imageView;
+@property (nonatomic, strong) NSMutableArray<id> *viewsInEditOrder;
 
 @end
 
@@ -37,7 +38,6 @@
     if ((self = [super init])) {
         
         _drawView = [JotDrawView new];
-        _drawView.delegate = self;
         _textEditView = [JotTextEditView new];
         _textEditView.delegate = self;
         _textView = [JotTextView new];
@@ -278,6 +278,14 @@
     [self.drawView clearDrawing];
 }
 
+- (void) undo {
+    id lastView = [self.viewsInEditOrder lastObject];
+    [self.viewsInEditOrder removeLastObject];
+    if ([lastView respondsToSelector:@selector(undo)]) {
+        [lastView undo];
+    }
+}
+
 - (void)clearText
 {
     self.textString = @"";
@@ -402,6 +410,9 @@
     if (self.state == JotViewStateDrawing) {
         [self.drawView drawTouchBeganAtPoint:touchPoint];
     }
+    if ([self.delegate respondsToSelector:@selector(jotViewControllerDidBeginDrawing:)]) {
+        [self.delegate jotViewControllerDidBeginDrawing:self];
+    }
 }
 
 - (void)jotDrawingContainerTouchMovedToPoint:(CGPoint)touchPoint
@@ -413,8 +424,12 @@
 
 - (void)jotDrawingContainerTouchEnded
 {
+    [self.viewsInEditOrder addObject:self.drawView];
     if (self.state == JotViewStateDrawing) {
         [self.drawView drawTouchEnded];
+    }
+    if ([self.delegate respondsToSelector:@selector(jotViewControllerDidEndDrawing:)]) {
+        [self.delegate jotViewControllerDidEndDrawing:self];
     }
 }
 
@@ -422,7 +437,7 @@
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
 {
-    return NO;
+    return YES;
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
@@ -468,18 +483,13 @@
     }
 }
 
-#pragma mark - JotDrawViewDelegate
+#pragma mark - Setters & Getters
 
-- (void)jotDrawViewDidBeginDrawing:(JotDrawView *)jotDrawView {
-    if ([self.delegate respondsToSelector:@selector(jotViewControllerDidBeginDrawing:)]) {
-        [self.delegate jotViewControllerDidBeginDrawing:self];
+- (NSMutableArray<id> *)viewsInEditOrder {
+    if (!_viewsInEditOrder) {
+        _viewsInEditOrder = [NSMutableArray new];
     }
-}
-
-- (void)jotDrawViewDidEndDrawing:(JotDrawView *)jotDrawView {
-    if ([self.delegate respondsToSelector:@selector(jotViewControllerDidEndDrawing:)]) {
-        [self.delegate jotViewControllerDidEndDrawing:self];
-    }
+    return _viewsInEditOrder;
 }
 
 @end

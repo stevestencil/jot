@@ -169,6 +169,11 @@ typedef NS_ENUM(NSUInteger, JotViewState){
 - (void)clearAll;
 
 /**
+ * Clears the last made edit
+ */
+- (void) undo;
+
+/**
  *  Clears only the drawing, leaving the text alone.
  */
 - (void)clearDrawing;

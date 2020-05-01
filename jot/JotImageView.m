@@ -70,45 +70,6 @@
     return CGSizeMake(imageViewSize.width * scale, imageViewSize.height * scale);
 }
 
-- (void) rotateView:(JotImageViewContainer*)view withTransform:(CGAffineTransform)transform {
-    CGFloat angle = RADIANS_TO_DEGREES(atan2f(transform.b, transform.a));
-    if (angle >= -5 && angle <= 5) {
-        transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(0));
-    } else if (angle >= 85 && angle <= 95) {
-        transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(90));
-    } else if (angle >= -95 && angle <= -85) {
-        transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(-90));
-    } else if ((angle >= 175 && angle <= 185)) {
-        transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(180));
-    } else if (angle >= -185 && angle <= -175) {
-        transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(-180));
-    }
-    view.transform = transform;
-}
-
-- (void) resizeView:(JotImageViewContainer*)view withSize:(CGSize)size andCenter:(CGPoint)center {
-    CGFloat widthPercentage = MAX(0.15f, floorf((size.width / CGRectGetWidth(self.frame)) * 100) / 100);
-    CGFloat heightPercentage = MAX(0.15f, floorf((size.height / CGRectGetHeight(self.frame)) * 100) / 100);
-    [view mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.width.equalTo(self.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
-        make.height.equalTo(self.mas_height).multipliedBy(MAX(0.15f, heightPercentage));
-        make.centerX.equalTo(self.mas_right).multipliedBy(center.x / CGRectGetWidth(self.frame));
-        make.centerY.equalTo(self.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.frame));
-    }];
-}
-
-- (void) moveView:(JotImageViewContainer*)view toCenter:(CGPoint)center {
-    CGRect currentFrame = view.frame;
-    CGFloat widthPercentage = floorf((CGRectGetWidth(currentFrame) / CGRectGetWidth(self.frame)) * 100) / 100;
-    CGFloat heightPercentage = floorf((CGRectGetHeight(currentFrame) / CGRectGetHeight(self.frame)) * 100) / 100;
-    [self.movingImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.width.equalTo(self.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
-        make.height.equalTo(self.mas_height).multipliedBy(MAX(0.15f, heightPercentage));
-        make.centerX.equalTo(self.mas_right).multipliedBy(center.x / CGRectGetWidth(self.frame));
-        make.centerY.equalTo(self.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.frame));
-    }];
-}
-
 - (CGRect) frameForViewWithSize:(CGSize)size withCenterPoint:(CGPoint)center {
     return CGRectMake(center.x - (size.width / 2), center.y - (size.height / 2), size.width, size.height);
 }
@@ -118,7 +79,7 @@
     [self addSubview:containerView];
     CGSize imageViewSize = [self sizeForImage:image withScale:1.0];
     CGRect frame = [self frameForViewWithSize:imageViewSize withCenterPoint:self.center];
-    [self resizeView:containerView withSize:frame.size andCenter:self.center];
+    [containerView resizeWithSize:frame.size andCenter:self.center];
     [self.imageViews addObject:containerView];
 }
 
@@ -146,7 +107,7 @@
                                                view.center.y - point.y - 5.0);
             CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
                                             point.y + self.referenceOffset.y);
-            [self moveView:self.movingImageView toCenter:newCenter];
+            [self.movingImageView moveViewToCenter:newCenter];
             
             if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
                 [self.delegate jotImageView:self didBeginMovingImageView:view];
@@ -161,7 +122,7 @@
             CGPoint point = [recognizer locationInView:self];
             CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
                                             point.y + self.referenceOffset.y);
-            [self moveView:self.movingImageView toCenter:newCenter];
+            [self.movingImageView moveViewToCenter:newCenter];
             
             if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
                 [self.delegate jotImageView:self didMoveImageView:self.movingImageView];
@@ -203,7 +164,7 @@
             }
             CGFloat scale = self.activePinchRecognizer.scale * self.scale;
             CGSize size = [self sizeForImage:self.movingImageView.imageView.image withScale:scale];
-            [self resizeView:self.movingImageView withSize:size andCenter:self.movingImageView.center];
+            [self.movingImageView resizeWithSize:size andCenter:self.movingImageView.center];
             if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
                 [self.delegate jotImageView:self didMoveImageView:self.movingImageView];
             }
@@ -251,7 +212,7 @@
             CGAffineTransform currentTransform = self.referenceRotateTransform;
             self.currentRotateTransform = CGAffineTransformRotate(self.referenceRotateTransform, recognizer.rotation);
             currentTransform = CGAffineTransformRotate(currentTransform, self.activeRotationRecognizer.rotation);
-            [self rotateView:self.movingImageView withTransform:currentTransform];
+            self.movingImageView.transform = currentTransform;
             if (self.movingImageView && [self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
                 [self.delegate jotImageView:self didMoveImageView:self.movingImageView];
             }

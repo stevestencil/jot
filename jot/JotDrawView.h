@@ -11,20 +11,11 @@
 
 @class JotDrawView;
 
-@protocol JotDrawViewDelegate <NSObject>
-
-- (void) jotDrawViewDidBeginDrawing:(JotDrawView*)jotDrawView;
-- (void) jotDrawViewDidEndDrawing:(JotDrawView*)jotDrawView;
-
-@end
-
 /**
  *  Private class to handle touch drawing. Change the properties
  *  in a JotViewController instance to configure this private class.
  */
 @interface JotDrawView : UIView
-
-@property (weak, nonatomic) id <JotDrawViewDelegate> delegate;
 
 /**
  *  Set to YES if you want the stroke width to be constant,
@@ -52,6 +43,11 @@
  *  to control this setting.
  */
 @property (nonatomic, strong) UIColor *strokeColor;
+
+/**
+*  Clears last path from the drawing.
+*/
+- (void) undo;
 
 /**
  *  Clears all paths from the drawing, giving a blank slate.

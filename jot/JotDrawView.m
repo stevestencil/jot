@@ -18,6 +18,7 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
 @interface JotDrawView ()
 
 @property (nonatomic, strong) UIImage *cachedImage;
+@property (nonatomic, strong) NSMutableArray<UIImage*> *cachedImages;
 
 @property (nonatomic, strong) NSMutableArray *pathsArray;
 
@@ -58,9 +59,17 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
 
 #pragma mark - Undo
 
+- (void) undo {
+    [self.cachedImages removeLastObject];
+    UIImage *previousImage = [self.cachedImages lastObject];
+    self.cachedImage = previousImage;
+    [self setNeedsDisplay];
+}
+
 - (void)clearDrawing
 {
     self.cachedImage = nil;
+    [self.cachedImages removeAllObjects];
     
     [self.pathsArray removeAllObjects];
     
@@ -94,9 +103,6 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
 
 - (void)drawTouchBeganAtPoint:(CGPoint)touchPoint
 {
-    if ([self.delegate respondsToSelector:@selector(jotDrawViewDidBeginDrawing:)]) {
-        [self.delegate jotDrawViewDidBeginDrawing:self];
-    }
     self.lastVelocity = self.initialVelocity;
     self.lastWidth = self.strokeWidth;
     self.pointsCounter = 0;
@@ -149,14 +155,12 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
 
 - (void)drawTouchEnded
 {
+    if (self.cachedImage) {
+        [self.cachedImages addObject:self.cachedImage];
+    }
     [self drawBitmap];
-    
     self.lastVelocity = self.initialVelocity;
     self.lastWidth = self.strokeWidth;
-    
-    if ([self.delegate respondsToSelector:@selector(jotDrawViewDidEndDrawing:)]) {
-        [self.delegate jotDrawViewDidEndDrawing:self];
-    }
 }
 
 #pragma mark - Drawing
@@ -191,7 +195,7 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
     UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, [UIScreen mainScreen].scale);
     
     if (self.cachedImage) {
-        [self.cachedImage drawAtPoint:CGPointZero];
+        [self.cachedImage drawInRect:self.frame];
     }
 
     [self.bezierPath jotDrawBezier];
@@ -291,6 +295,15 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
                                      withWidth:[(JotTouchPoint *)path strokeWidth]];
         }
     }
+}
+
+#pragma mark - Setters & Getters
+
+- (NSMutableArray<UIImage *> *)cachedImages {
+    if (!_cachedImages) {
+        _cachedImages = [NSMutableArray new];
+    }
+    return _cachedImages;
 }
 
 @end
