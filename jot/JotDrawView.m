@@ -63,7 +63,6 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
     [self.cachedImages removeLastObject];
     UIImage *previousImage = [self.cachedImages lastObject];
     self.cachedImage = previousImage;
-    [self setNeedsDisplay];
     [UIView transitionWithView:self duration:0.2f
                        options:UIViewAnimationOptionTransitionCrossDissolve
                     animations:^{
@@ -161,10 +160,10 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
 
 - (void)drawTouchEnded
 {
+    [self drawBitmap];
     if (self.cachedImage) {
         [self.cachedImages addObject:self.cachedImage];
     }
-    [self drawBitmap];
     self.lastVelocity = self.initialVelocity;
     self.lastWidth = self.strokeWidth;
 }
