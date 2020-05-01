@@ -5,26 +5,23 @@
 //  Created by Steve Stencil on 4/29/20.
 //
 
-#import "JotImageViewContainer.h"
+#import "JotMovableView.h"
 #import "Masonry.h"
 
-#define DEGREES_TO_RADIANS(x) (M_PI * (x) / 180.0)
-#define RADIANS_TO_DEGREES(x) (x * (180 / M_PI))
-
-@interface JotImageViewContainer ()
+@interface JotMovableView ()
 
 @property (nonatomic) CGFloat aspectRatio;
 @property (strong, nonatomic) NSMutableArray<NSDictionary*> *editHistory;
+@property (weak, nonatomic, readonly) UIImageView *imageView;
 
 @end
 
-@implementation JotImageViewContainer
+@implementation JotMovableView
 
 + (instancetype) imageViewContainerWithImage:(UIImage*)image {
-    JotImageViewContainer *container = [JotImageViewContainer new];
+    JotMovableView *container = [JotMovableView new];
     [container addImageViewWithImage:image];
     container.backgroundColor = [UIColor clearColor];
-    container.scale = 1.0f;
     container.aspectRatio = image.size.width / image.size.height;
     return container;
 }
@@ -33,6 +30,7 @@
     UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
     [self addSubview:imageView];
     _imageView = imageView;
+    _type = JotMovableViewContainerTypeImage;
     imageView.contentMode = UIViewContentModeScaleAspectFit;
     imageView.userInteractionEnabled = NO;
     [imageView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -95,6 +93,15 @@
     }];
 }
 
+- (void)resizeWithScale:(CGFloat)scale {
+    CGSize newSize = CGSizeMake(self.superview.frame.size.width, self.superview.frame.size.width / self.aspectRatio);
+    if (newSize.height > self.superview.frame.size.height) {
+        newSize.height = self.superview.frame.size.height;
+        newSize.width = self.superview.frame.size.height * self.aspectRatio;
+    }
+    [self resizeWithSize:CGSizeMake(newSize.width * scale, newSize.height * scale)];
+}
+
 - (void) moveViewToCenter:(CGPoint)center {
     CGFloat widthPercentage = floorf((CGRectGetWidth(self.frame) / CGRectGetWidth(self.superview.frame)) * 100) / 100;
     [self mas_remakeConstraints:^(MASConstraintMaker *make) {
@@ -141,6 +148,10 @@
         _editHistory = [NSMutableArray new];
     }
     return _editHistory;
+}
+
+- (UIImage *)image {
+    return self.imageView.image;
 }
 
 @end

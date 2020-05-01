@@ -6,23 +6,19 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "JotImageViewContainer.h"
 
 @class JotMovableViewContainer;
 
-@protocol JotImageViewDelegate <NSObject>
+@protocol JotMovableViewContainerDelegate <NSObject>
 
-- (void) jotImageView:(JotMovableViewContainer*)jotImageView didBeginMovingImageView:(JotImageViewContainer*)imageView;
-- (void) jotImageView:(JotMovableViewContainer *)jotImageView didMoveImageView:(JotImageViewContainer *)imageView;
-- (void) jotImageView:(JotMovableViewContainer*)jotImageView didEndMovingImageView:(JotImageViewContainer*)imageView;
-- (void) jotImageViewDidCaptureUndoSnapshot:(JotMovableViewContainer*)jotImageView;
+- (void) jotMovableViewContainerUndoSnapshot:(JotMovableViewContainer*)movableViewContainer;
 
 @end
 
 @interface JotMovableViewContainer : UIView
 
-@property (weak, nonatomic) id <JotImageViewDelegate> delegate;
-@property (nonatomic, readonly) NSInteger imageCount;
+@property (weak, nonatomic) id <JotMovableViewContainerDelegate> delegate;
+@property (nonatomic, readonly) NSInteger viewCount;
 @property (nonatomic, readonly) BOOL isMovingView;
 
 - (void)handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer;
@@ -30,7 +26,7 @@
 - (void) handleRotateGesture:(UIRotationGestureRecognizer*)recognizer;
 - (UIImage*) renderImage;
 - (void)addImageView:(UIImage*)image;
-- (void) clearImages;
+- (void) clearAll;
 - (void) cancelEditing;
 - (void) undo;
 

@@ -15,7 +15,7 @@
 #import "JotDrawingContainer.h"
 #import "JotMovableViewContainer.h"
 
-@interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotDrawingContainerDelegate, JotImageViewDelegate>
+@interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotDrawingContainerDelegate, JotMovableViewContainerDelegate>
 
 @property (nonatomic, strong) UITapGestureRecognizer *tapRecognizer;
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchRecognizer;
@@ -294,7 +294,7 @@
 }
 
 - (void)clearImages {
-    [self.imageView clearImages];
+    [self.imageView clearAll];
 }
 
 - (void)addBackgroundImage:(UIImage *)image {
@@ -302,7 +302,7 @@
 }
 
 - (BOOL)photosAdded {
-    return self.imageView.imageCount > 0;
+    return self.imageView.viewCount > 0;
 }
 
 #pragma mark - Output UIImage
@@ -466,25 +466,7 @@
 
 #pragma mark - JotImageViewDelegate
 
-- (void) jotImageView:(JotMovableViewContainer*)jotImageView didBeginMovingImageView:(UIImageView*)imageView {
-    if ([self.delegate respondsToSelector:@selector(jotImageView:didBeginMovingImageView:)]) {
-        [self.delegate jotViewController:self didBeginMovingImageView:imageView];
-    }
-}
-
-- (void) jotImageView:(JotMovableViewContainer *)jotImageView didMoveImageView:(UIImageView *)imageView {
-    if ([self.delegate respondsToSelector:@selector(jotImageView:didMoveImageView:)]) {
-        [self.delegate jotViewController:self didMoveImageView:imageView];
-    }
-}
-
-- (void) jotImageView:(JotMovableViewContainer*)jotImageView didEndMovingImageView:(UIImageView*)imageView {
-    if ([self.delegate respondsToSelector:@selector(jotImageView:didEndMovingImageView:)]) {
-        [self.delegate jotViewController:self didEndMovingImageView:imageView];
-    }
-}
-
-- (void) jotImageViewDidCaptureUndoSnapshot:(JotMovableViewContainer *)jotImageView {
+- (void) jotMovableViewContainerUndoSnapshot:(JotMovableViewContainer *)jotImageView {
     [self.viewsInEditOrder addObject:jotImageView];
 }
 

@@ -241,9 +241,6 @@ typedef NS_ENUM(NSUInteger, JotViewState){
  */
 - (void)jotViewController:(JotViewController *)jotViewController isEditingText:(BOOL)isEditing;
 - (void)jotViewController:(JotViewController *)jotViewController didChangeState:(JotViewState)state;
-- (void) jotViewController:(JotViewController*)jotViewController didBeginMovingImageView:(UIImageView*)imageView;
-- (void) jotViewController:(JotViewController*)jotViewController didMoveImageView:(UIImageView*)imageView;
-- (void) jotViewController:(JotViewController*)jotViewController didEndMovingImageView:(UIImageView*)imageView;
 - (void) jotViewControllerDidBeginDrawing:(JotViewController*)jotViewController;
 - (void) jotViewControllerDidEndDrawing:(JotViewController*)jotViewController;
 
