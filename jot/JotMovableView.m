@@ -60,11 +60,11 @@
     [self.editHistory addObject:object];
 }
 
-- (void) undo {
+- (instancetype) undo {
     NSDictionary *lastCapture = [self.editHistory lastObject];
     if (!lastCapture) {
         [self removeFromSuperview];
-        return;
+        return nil;
     }
     CGSize size = [lastCapture[@"size"] CGSizeValue];
     CGPoint center = [lastCapture[@"center"] CGPointValue];
@@ -79,6 +79,7 @@
     }];
     self.transform = transform;
     [self.editHistory removeLastObject];
+    return self;
 }
 
 #pragma mark - Moving, Resizing and Rotation

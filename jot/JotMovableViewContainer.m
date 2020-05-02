@@ -12,7 +12,7 @@
 @interface JotMovableViewContainer ()
 
 @property (nonatomic, strong) NSMutableArray<JotMovableView*> *movableViews;
-@property (nonatomic, strong) JotMovableView *movingView;
+@property (nonatomic, weak) JotMovableView *movingView;
 @property (nonatomic, assign) CGFloat scale;
 @property (nonatomic, assign) CGPoint referenceOffset;
 @property (nonatomic, assign) CGAffineTransform referenceRotateTransform;
@@ -65,7 +65,9 @@
 
 - (void) undo {
     JotMovableView *lastEdited = [self.viewsLastEdited lastObject];
-    [lastEdited undo];
+    if (![lastEdited undo]) {
+        [self.movableViews removeObject:lastEdited];
+    }
     [self.viewsLastEdited removeLastObject];
     [UIView transitionWithView:self duration:0.2f
                        options:UIViewAnimationOptionTransitionCrossDissolve

@@ -26,6 +26,6 @@ typedef enum {
 - (void) resizeWithScale:(CGFloat)scale;
 - (void) moveViewToCenter:(CGPoint)center;
 - (void) captureUndoObject;
-- (void) undo;
+- (instancetype) undo;
 
 @end
