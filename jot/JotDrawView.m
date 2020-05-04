@@ -21,7 +21,7 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
 @property (nonatomic, strong) NSMutableArray<UIImage*> *cachedImages;
 
 @property (nonatomic, strong) NSMutableArray *pathsArray;
-
+@property (nonatomic, strong) NSMutableArray<NSNumber*> *pathsCounts;
 @property (nonatomic, strong) JotTouchBezier *bezierPath;
 @property (nonatomic, strong) NSMutableArray *pointsArray;
 @property (nonatomic, assign) NSUInteger pointsCounter;
@@ -43,6 +43,7 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
         _strokeColor = [UIColor blackColor];
         
         _pathsArray = [NSMutableArray array];
+        _pathsCounts = [NSMutableArray new];
         
         _constantStrokeWidth = NO;
         
@@ -63,6 +64,11 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
     [self.cachedImages removeLastObject];
     UIImage *previousImage = [self.cachedImages lastObject];
     self.cachedImage = previousImage;
+    [self.pathsCounts removeLastObject];
+    NSInteger lastCount = [[self.pathsCounts lastObject] integerValue];
+    while (self.pathsArray.count > lastCount) {
+        [self.pathsArray removeLastObject];
+    }
     [UIView transitionWithView:self duration:0.2f
                        options:UIViewAnimationOptionTransitionCrossDissolve
                     animations:^{
@@ -77,6 +83,7 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
     [self.cachedImages removeAllObjects];
     
     [self.pathsArray removeAllObjects];
+    [self.pathsCounts removeAllObjects];
     
     self.bezierPath = nil;
     self.pointsCounter = 0;
@@ -166,6 +173,7 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
     }
     self.lastVelocity = self.initialVelocity;
     self.lastWidth = self.strokeWidth;
+    [self.pathsCounts addObject:@(self.pathsArray.count)];
 }
 
 #pragma mark - Drawing
