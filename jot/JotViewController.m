@@ -26,7 +26,7 @@
 @property (nonatomic, strong) JotDrawView *drawView;
 @property (nonatomic, strong) JotTextEditView *textEditView;
 @property (nonatomic, strong) JotTextView *textView;
-@property (nonatomic, strong) JotMovableViewContainer *imageView;
+@property (nonatomic, strong) JotMovableViewContainer *movableView;
 @property (nonatomic, strong) NSMutableArray<id> *viewsInEditOrder;
 
 @end
@@ -43,8 +43,8 @@
         _textView = [JotTextView new];
         _drawingContainer = [JotDrawingContainer new];
         self.drawingContainer.delegate = self;
-        _imageView = [JotMovableViewContainer new];
-        self.imageView.delegate = self;
+        _movableView = [JotMovableViewContainer new];
+        self.movableView.delegate = self;
         
         _font = self.textView.font;
         self.textEditView.font = self.font;
@@ -93,8 +93,8 @@
     self.view.backgroundColor = [UIColor clearColor];
     self.drawingContainer.clipsToBounds = YES;
     
-    [self.view addSubview:self.imageView];
-    [self.imageView mas_makeConstraints:^(MASConstraintMaker *make) {
+    [self.view addSubview:self.movableView];
+    [self.movableView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.edges.equalTo(self.view);
     }];
     
@@ -146,7 +146,7 @@
         self.rotationRecognizer.enabled = (state == JotViewStateText) || (state == JotViewStateImage);
         
         if (state != JotViewStateImage) {
-            [self.imageView cancelEditing];
+            [self.movableView cancelEditing];
         }
         
         if ([self.delegate respondsToSelector:@selector(jotViewController:didChangeState:)]) {
@@ -294,25 +294,25 @@
 }
 
 - (void)clearImages {
-    [self.imageView clearAll];
+    [self.movableView clearAll];
 }
 
 - (void)addBackgroundImage:(UIImage *)image {
-    [self.imageView addImageView:image];
+    [self.movableView addImageView:image];
 }
 
 - (BOOL)photosAdded {
-    return self.imageView.viewCount > 0;
+    return self.movableView.viewCount > 0;
 }
 
 #pragma mark - Output UIImage
 
 - (UIImage *)drawOnImage:(UIImage *)image
 {
-    [self.imageView cancelEditing];
+    [self.movableView cancelEditing];
     UIImage *drawImage;
     if (!image) {
-        drawImage = [self.imageView renderImage];
+        drawImage = [self.movableView renderImage];
         drawImage = [self.drawView drawOnImage:drawImage];
     } else {
         drawImage = [self.drawView drawOnImage:image];
@@ -345,7 +345,7 @@
 
 - (UIImage *)renderImageWithSize:(CGSize)size
 {
-    [self.imageView cancelEditing];
+    [self.movableView cancelEditing];
     UIImage *renderDrawingImage = [self.drawView renderDrawingWithSize:size];
     
     return [self.textView drawTextOnImage:renderDrawingImage];
@@ -376,7 +376,7 @@
 - (void)handlePanGesture:(UIGestureRecognizer *)recognizer
 {
     if (self.state == JotViewStateImage) {
-        [self.imageView handleLongPressGesture:(UILongPressGestureRecognizer*)recognizer];
+        [self.movableView handleLongPressGesture:(UILongPressGestureRecognizer*)recognizer];
         return;
     }
     [self.textView handlePanGesture:recognizer];
@@ -386,9 +386,9 @@
 {
     if (self.state == JotViewStateImage) {
         if ([recognizer isKindOfClass:[UIPinchGestureRecognizer class]]) {
-            [self.imageView handlePinchGesture:(UIPinchGestureRecognizer*)recognizer];
+            [self.movableView handlePinchGesture:(UIPinchGestureRecognizer*)recognizer];
         } else if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
-            [self.imageView handleRotateGesture:(UIRotationGestureRecognizer*)recognizer];
+            [self.movableView handleRotateGesture:(UIRotationGestureRecognizer*)recognizer];
         }
         return;
     }
