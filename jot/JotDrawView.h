@@ -9,6 +9,11 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 
+typedef enum {
+    JotDrawViewModeStandard,
+    JotDrawViewModeStraightLines
+} JotDrawViewMode;
+
 @class JotDrawView;
 
 /**
@@ -16,6 +21,9 @@
  *  in a JotViewController instance to configure this private class.
  */
 @interface JotDrawView : UIView
+
+
+@property (nonatomic) JotDrawViewMode mode;
 
 /**
  *  Set to YES if you want the stroke width to be constant,

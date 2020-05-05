@@ -22,6 +22,7 @@ typedef NS_ENUM(NSUInteger, JotViewState){
      *  The drawing state, where drawing with touch
      *  gestures will create colored lines in the view.
      */
+    JotViewStateStraightLineDrawing,
     JotViewStateDrawing,
     /**
      *  The text state, where pinch, pan, and rotate

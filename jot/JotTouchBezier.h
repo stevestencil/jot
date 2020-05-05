@@ -54,6 +54,8 @@
  */
 @property (nonatomic, assign) BOOL constantWidth;
 
+@property (nonatomic, assign) BOOL straightLine;
+
 /**
  *  Returns an instance of JotTouchBezier with the given stroke color.
  *

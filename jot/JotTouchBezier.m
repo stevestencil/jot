@@ -23,7 +23,15 @@ NSUInteger const kJotDrawStepsPerBezier = 300;
 
 - (void)jotDrawBezier
 {
-    if (self.constantWidth) {
+    if (self.straightLine) {
+        UIBezierPath *bezierPath = [UIBezierPath new];
+        [bezierPath moveToPoint:self.startPoint];
+        [bezierPath addLineToPoint:self.endPoint];
+        bezierPath.lineWidth = self.startWidth;
+        bezierPath.lineCapStyle = kCGLineCapRound;
+        [self.strokeColor setStroke];
+        [bezierPath strokeWithBlendMode:kCGBlendModeNormal alpha:1.f];
+    } else if (self.constantWidth) {
         UIBezierPath *bezierPath = [UIBezierPath new];
         [bezierPath moveToPoint:self.startPoint];
         [bezierPath addCurveToPoint:self.endPoint controlPoint1:self.controlPoint1 controlPoint2:self.controlPoint2];

@@ -14,6 +14,7 @@
 CGFloat const kJotVelocityFilterWeight = 0.9f;
 CGFloat const kJotInitialVelocity = 220.f;
 CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
+CGFloat const kJotSnappedLineTolerance = 15.0f;
 
 @interface JotDrawView ()
 
@@ -39,6 +40,7 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
         
         self.backgroundColor = [UIColor clearColor];
                 
+        _mode = JotDrawViewModeStandard;
         _strokeWidth = 10.f;
         _strokeColor = [UIColor blackColor];
         
@@ -113,10 +115,39 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
 
 #pragma mark - Draw Touches
 
+- (BOOL) isAxis:(CGFloat)axisA closeToAxis:(CGFloat)axisB {
+    return axisA >= axisB - kJotSnappedLineTolerance && axisA <= axisB + kJotSnappedLineTolerance;
+}
+
+- (BOOL) isPoint:(CGPoint)pointA closeToPoint:(CGPoint)pointB {
+    return [self isAxis:pointA.x closeToAxis:pointB.x] && [self isAxis:pointA.y closeToAxis:pointB.y];
+}
+
 - (void)drawTouchBeganAtPoint:(CGPoint)touchPoint
 {
     self.lastVelocity = self.initialVelocity;
     self.lastWidth = self.strokeWidth;
+    
+    if (self.mode == JotDrawViewModeStraightLines) {
+        self.bezierPath = nil;
+        CGPoint snappedPoint = touchPoint;
+        for (JotTouchBezier *path in self.pathsArray) {
+            if ([self isPoint:touchPoint closeToPoint:path.startPoint]) {
+                snappedPoint = path.startPoint;
+                break;
+            } else if ([self isPoint:touchPoint closeToPoint:path.endPoint]) {
+                snappedPoint = path.endPoint;
+                break;
+            }
+        }
+        self.bezierPath.startPoint = snappedPoint;
+        self.bezierPath.endPoint = snappedPoint;
+        self.bezierPath.startWidth = self.strokeWidth;
+        self.bezierPath.endWidth = self.strokeWidth;
+        self.bezierPath.straightLine = YES;
+        return;
+    }
+
     self.pointsCounter = 0;
     [self.pointsArray removeAllObjects];
     [self.pointsArray addObject:[JotTouchPoint withPoint:touchPoint]];
@@ -124,6 +155,51 @@ CGFloat const kJotRelativeMinStrokeWidth = 0.4f;
 
 - (void)drawTouchMovedToPoint:(CGPoint)touchPoint
 {
+    if (self.mode == JotDrawViewModeStraightLines) {
+        CGPoint snappedPoint = touchPoint;
+        if ([self isAxis:touchPoint.x closeToAxis:self.bezierPath.startPoint.x]) {
+            snappedPoint.x = self.bezierPath.startPoint.x;
+        }
+        if ([self isAxis:touchPoint.y closeToAxis:self.bezierPath.startPoint.y]) {
+            snappedPoint.y = self.bezierPath.startPoint.y;
+        }
+        CGFloat oldDifferenceX = CGFLOAT_MAX;
+        CGFloat oldDifferenceY = CGFLOAT_MAX;
+        for (JotTouchBezier *path in self.pathsArray) {
+            if ([self isAxis:touchPoint.x closeToAxis:path.startPoint.x]) {
+                CGFloat newDifference =fabs(touchPoint.x - path.startPoint.x) < oldDifferenceX;
+                if (newDifference < oldDifferenceX) {
+                    oldDifferenceX = newDifference;
+                    snappedPoint.x = path.startPoint.x;
+                }
+            }
+            if ([self isAxis:touchPoint.x closeToAxis:path.endPoint.x]) {
+                CGFloat newDifference =fabs(touchPoint.x - path.endPoint.x) < oldDifferenceX;
+                if (newDifference < oldDifferenceX) {
+                    oldDifferenceX = newDifference;
+                    snappedPoint.x = path.endPoint.x;
+                }
+            }
+            if ([self isAxis:touchPoint.y closeToAxis:path.startPoint.y]) {
+                CGFloat newDifference = fabs(touchPoint.y - path.startPoint.y) < oldDifferenceY;
+                if (newDifference < oldDifferenceY) {
+                    oldDifferenceY = newDifference;
+                    snappedPoint.y = path.startPoint.y;
+                }
+            }
+            if ([self isAxis:touchPoint.y closeToAxis:path.endPoint.y]) {
+                CGFloat newDifference = fabs(touchPoint.y - path.endPoint.y) < oldDifferenceY;
+                if (newDifference < oldDifferenceY) {
+                    oldDifferenceY = newDifference;
+                    snappedPoint.y = path.endPoint.y;
+                }
+            }
+        }
+        self.bezierPath.endPoint = snappedPoint;
+        [self setNeedsDisplay];
+        return;
+    }
+    
     self.pointsCounter += 1;
     [self.pointsArray addObject:[JotTouchPoint withPoint:touchPoint]];
     
