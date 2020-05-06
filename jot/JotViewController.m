@@ -312,6 +312,22 @@
     return self.movableView.viewCount > 0;
 }
 
+- (void)setGridSize:(CGFloat)gridSize {
+    self.drawView.gridSize = gridSize;
+}
+
+- (CGFloat)gridSize {
+    return self.drawView.gridSize;
+}
+
+- (void)setGridColor:(UIColor *)gridColor {
+    self.drawView.gridColor = gridColor;
+}
+
+- (UIColor *)gridColor {
+    return self.drawView.gridColor;
+}
+
 #pragma mark - Output UIImage
 
 - (UIImage *)drawOnImage:(UIImage *)image

@@ -165,6 +165,9 @@ typedef NS_ENUM(NSUInteger, JotViewState){
 
 @property (nonatomic, readonly) BOOL photosAdded;
 
+@property (nonatomic) CGFloat gridSize;
+@property (nonatomic, strong) UIColor *gridColor;
+
 /**
  *  Clears all paths from the drawing in and sets the text to an empty string, giving a blank slate.
  */
