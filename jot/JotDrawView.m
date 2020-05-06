@@ -384,6 +384,9 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     [self drawAllPaths];
     UIImage *pathsImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
+    if (!backgroundImage) {
+        return [UIImage imageWithCGImage:pathsImage.CGImage scale:1.f orientation:pathsImage.imageOrientation];
+    }
 
     UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, scale);
         
@@ -398,7 +401,7 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         imageCanvassSize.width,
         imageCanvassSize.height
     );
-    [backgroundImage drawInRect:imageRect];
+    [backgroundImage drawInRect:CGRectMake(0, 0, size.width, size.height)];
     [pathsImage drawInRect:imageRect];
     
     UIImage *drawnImage = UIGraphicsGetImageFromCurrentImageContext();
