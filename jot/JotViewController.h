@@ -24,6 +24,7 @@ typedef NS_ENUM(NSUInteger, JotViewState){
      */
     JotViewStateStraightLineDrawing,
     JotViewStateDrawing,
+    JotViewStateErase,
     /**
      *  The text state, where pinch, pan, and rotate
      *  gestures will manipulate the displayed text, and

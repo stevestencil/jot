@@ -357,6 +357,7 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         _bezierPath = [JotTouchBezier withColor:self.strokeColor];
         [self.pathsArray addObject:_bezierPath];
         _bezierPath.constantWidth = self.constantStrokeWidth;
+        _bezierPath.erase = self.mode == JotDrawViewModeErase;
     }
     
     return _bezierPath;
@@ -380,6 +381,11 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     CGFloat scale = size.width / CGRectGetWidth(self.bounds);
     
     UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, scale);
+    [self drawAllPaths];
+    UIImage *pathsImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+
+    UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, scale);
         
     CGFloat imageAspectRatio = backgroundImage.size.width / backgroundImage.size.height;
     CGSize imageCanvassSize = CGSizeMake(CGRectGetWidth(self.bounds), CGRectGetWidth(self.bounds) / imageAspectRatio);
@@ -393,7 +399,7 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         imageCanvassSize.height
     );
     [backgroundImage drawInRect:imageRect];
-    [self drawAllPaths];
+    [pathsImage drawInRect:imageRect];
     
     UIImage *drawnImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();

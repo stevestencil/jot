@@ -152,6 +152,8 @@
         self.drawView.mode = JotDrawViewModeStandard;
         if (state == JotViewStateStraightLineDrawing) {
             self.drawView.mode = JotDrawViewModeStraightLines;
+        } else if (state == JotViewStateErase) {
+            self.drawView.mode = JotDrawViewModeErase;
         }
         
         if ([self.delegate respondsToSelector:@selector(jotViewController:didChangeState:)]) {
@@ -413,7 +415,7 @@
 
 - (void)jotDrawingContainerTouchBeganAtPoint:(CGPoint)touchPoint
 {
-    if (self.state == JotViewStateDrawing || self.state == JotViewStateStraightLineDrawing) {
+    if (self.state == JotViewStateDrawing || self.state == JotViewStateStraightLineDrawing || self.state == JotViewStateErase) {
         [self.drawView drawTouchBeganAtPoint:touchPoint];
     }
     if ([self.delegate respondsToSelector:@selector(jotViewControllerDidBeginDrawing:)]) {
@@ -423,7 +425,7 @@
 
 - (void)jotDrawingContainerTouchMovedToPoint:(CGPoint)touchPoint
 {
-    if (self.state == JotViewStateDrawing || self.state == JotViewStateStraightLineDrawing) {
+    if (self.state == JotViewStateDrawing || self.state == JotViewStateStraightLineDrawing || self.state == JotViewStateErase) {
         [self.drawView drawTouchMovedToPoint:touchPoint];
     }
 }
@@ -431,7 +433,7 @@
 - (void)jotDrawingContainerTouchEnded
 {
     [self.viewsInEditOrder addObject:self.drawView];
-    if (self.state == JotViewStateDrawing || self.state == JotViewStateStraightLineDrawing) {
+    if (self.state == JotViewStateDrawing || self.state == JotViewStateStraightLineDrawing || self.state == JotViewStateErase) {
         [self.drawView drawTouchEnded];
     }
     if ([self.delegate respondsToSelector:@selector(jotViewControllerDidEndDrawing:)]) {

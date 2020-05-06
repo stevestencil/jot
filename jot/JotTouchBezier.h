@@ -56,6 +56,8 @@
 
 @property (nonatomic, assign) BOOL straightLine;
 
+@property (nonatomic, assign) BOOL erase;
+
 /**
  *  Returns an instance of JotTouchBezier with the given stroke color.
  *

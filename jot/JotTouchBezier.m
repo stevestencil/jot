@@ -30,7 +30,7 @@ NSUInteger const kJotDrawStepsPerBezier = 300;
         bezierPath.lineWidth = self.startWidth;
         bezierPath.lineCapStyle = kCGLineCapRound;
         [self.strokeColor setStroke];
-        [bezierPath strokeWithBlendMode:kCGBlendModeNormal alpha:1.f];
+        [bezierPath strokeWithBlendMode:self.erase ? kCGBlendModeClear : kCGBlendModeNormal alpha:1.f];
     } else if (self.constantWidth) {
         UIBezierPath *bezierPath = [UIBezierPath new];
         [bezierPath moveToPoint:self.startPoint];
@@ -38,7 +38,7 @@ NSUInteger const kJotDrawStepsPerBezier = 300;
         bezierPath.lineWidth = self.startWidth;
         bezierPath.lineCapStyle = kCGLineCapRound;
         [self.strokeColor setStroke];
-        [bezierPath strokeWithBlendMode:kCGBlendModeNormal alpha:1.f];
+        [bezierPath strokeWithBlendMode:self.erase ? kCGBlendModeClear : kCGBlendModeNormal alpha:1.f];
     } else {
         [self.strokeColor setFill];
         

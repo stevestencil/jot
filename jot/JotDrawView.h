@@ -11,7 +11,8 @@
 
 typedef enum {
     JotDrawViewModeStandard,
-    JotDrawViewModeStraightLines
+    JotDrawViewModeStraightLines,
+    JotDrawViewModeErase,
 } JotDrawViewMode;
 
 @class JotDrawView;
