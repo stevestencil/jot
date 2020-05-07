@@ -229,7 +229,14 @@
 #pragma mark - Image Render
 
 - (UIImage*) renderImage {
-    UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, 0.0);
+    return [self renderImageOnImage:nil];
+}
+
+- (UIImage *)renderImageOnImage:(UIImage *)image {
+    UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, 1.0f);
+    if (image) {
+        [image drawInRect:CGRectMake(0.f, 0.f, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds))];
+    }
     CGContextRef context = UIGraphicsGetCurrentContext();
     for (JotMovableView *movableView in self.movableViews) {
         CGRect frame = movableView.frame;
@@ -246,9 +253,9 @@
             CGContextRestoreGState(context);
         }
     }
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIImage *finalImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
-    return image;
+    return finalImage;
 }
 
 #pragma mark - Setters & Getters

@@ -26,7 +26,6 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 @property (nonatomic, assign) CGFloat lastVelocity;
 @property (nonatomic, assign) CGFloat lastWidth;
 @property (nonatomic, assign) CGFloat initialVelocity;
-@property (nonatomic, strong) UIBezierPath *gridPath;
 
 @end
 
@@ -41,8 +40,6 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         _mode = JotDrawViewModeStandard;
         _strokeWidth = 10.f;
         _strokeColor = [UIColor blackColor];
-        
-        _gridColor = [UIColor colorWithRed:150/255.0f green:173/255.0f blue:233/255.0 alpha:1.0f];
         
         _pathsArray = [NSMutableArray array];
         _pathsCounts = [NSMutableArray new];
@@ -105,18 +102,6 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         [self.pointsArray removeAllObjects];
         self.pointsCounter = 0;
     }
-}
-
-- (void)setGridSize:(CGFloat)gridSize {
-    _gridSize = gridSize;
-    self.gridPath = nil;
-    [self setNeedsDisplay];
-}
-
-- (void) setGridColor:(UIColor *)gridColor {
-    _gridColor = gridColor;
-    self.gridPath = nil;
-    [self setNeedsDisplay];
 }
 
 #pragma mark - Draw Touches
@@ -282,13 +267,6 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 
 #pragma mark - Drawing
 
- - (void) drawGridIfNeeded {
-     if (self.gridSize > 0) {
-         [self.gridColor setStroke];
-         [self.gridPath strokeWithBlendMode:kCGBlendModeNormal alpha:0.5f];
-     }
- }
-
 - (void)drawRect:(CGRect)rect
 {
     [self drawAllPaths];
@@ -367,7 +345,6 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 
 - (void)drawAllPaths
 {
-    [self drawGridIfNeeded];
     for (NSObject *path in self.pathsArray) {
         if ([path isKindOfClass:[JotTouchBezier class]]) {
             [(JotTouchBezier *)path jotDrawBezier];
@@ -377,36 +354,6 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
                                      withWidth:[(JotTouchPoint *)path strokeWidth]];
         }
     }
-}
-
-#pragma mark - Setters & Getters
-
-- (UIBezierPath *)gridPath {
-    if (!_gridPath) {
-        CGFloat size = self.gridSize;
-        CGFloat xOffset = fmod(CGRectGetWidth(self.frame), size) / 2;
-        CGFloat yOffset = fmod(CGRectGetHeight(self.frame), size) / 2;
-        CGFloat x = xOffset;
-        UIBezierPath *path = [[UIBezierPath alloc] init];
-        [path moveToPoint:CGPointMake(x, yOffset)];
-        [path addLineToPoint:CGPointMake(x, CGRectGetMaxY(self.frame) - yOffset)];
-        while (x < CGRectGetWidth(self.frame)) {
-            [path moveToPoint:CGPointMake(x + size, yOffset)];
-            [path addLineToPoint:CGPointMake(x + size, CGRectGetMaxY(self.frame) - yOffset)];
-            x += size;
-        }
-        
-        NSInteger y = yOffset;
-        [path moveToPoint:CGPointMake(xOffset, y)];
-        [path addLineToPoint:CGPointMake(CGRectGetMaxX(self.frame) - xOffset, y)];
-        while (y < CGRectGetHeight(self.frame)) {
-            [path moveToPoint:CGPointMake(xOffset, y + size)];
-            [path addLineToPoint:CGPointMake(CGRectGetMaxX(self.frame) - xOffset, y + size)];
-            y += size;
-        }
-        _gridPath = path;
-    }
-    return _gridPath;
 }
 
 @end

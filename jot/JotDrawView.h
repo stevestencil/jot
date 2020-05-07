@@ -53,9 +53,6 @@ typedef enum {
  */
 @property (nonatomic, strong) UIColor *strokeColor;
 
-@property (nonatomic, assign) CGFloat gridSize;
-@property (nonatomic, strong) UIColor *gridColor;
-
 /**
 *  Clears last path from the drawing.
 */

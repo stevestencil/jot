@@ -14,6 +14,7 @@
 #import "UIImage+Jot.h"
 #import "JotDrawingContainer.h"
 #import "JotMovableViewContainer.h"
+#import "JotGridView.h"
 
 @interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotDrawingContainerDelegate, JotMovableViewContainerDelegate>
 
@@ -27,6 +28,7 @@
 @property (nonatomic, strong) JotTextEditView *textEditView;
 @property (nonatomic, strong) JotTextView *textView;
 @property (nonatomic, strong) JotMovableViewContainer *movableView;
+@property (nonatomic, strong) JotGridView *gridView;
 @property (nonatomic, strong) NSMutableArray<id> *viewsInEditOrder;
 
 @end
@@ -45,6 +47,9 @@
         self.drawingContainer.delegate = self;
         _movableView = [JotMovableViewContainer new];
         self.movableView.delegate = self;
+        
+        JotGridView *gridView = [[JotGridView alloc] init];
+        self.gridView = gridView;
         
         _font = self.textView.font;
         self.textEditView.font = self.font;
@@ -92,6 +97,11 @@
     
     self.view.backgroundColor = [UIColor clearColor];
     self.drawingContainer.clipsToBounds = YES;
+    
+    [self.view addSubview:self.gridView];
+    [self.gridView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.equalTo(self);
+    }];
     
     [self.view addSubview:self.movableView];
     [self.movableView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -313,19 +323,27 @@
 }
 
 - (void)setGridSize:(CGFloat)gridSize {
-    self.drawView.gridSize = gridSize;
+    self.gridView.gridSize = gridSize;
 }
 
 - (CGFloat)gridSize {
-    return self.drawView.gridSize;
+    return self.gridView.gridSize;
 }
 
 - (void)setGridColor:(UIColor *)gridColor {
-    self.drawView.gridColor = gridColor;
+    self.gridView.gridColor = gridColor;
 }
 
 - (UIColor *)gridColor {
-    return self.drawView.gridColor;
+    return self.gridView.gridColor;
+}
+
+- (BOOL)hasGrid {
+    return !self.gridView.hidden;
+}
+
+- (void)setHasGrid:(BOOL)hasGrid {
+    self.gridView.hidden = !hasGrid;
 }
 
 #pragma mark - Output UIImage
@@ -335,7 +353,8 @@
     [self.movableView cancelEditing];
     UIImage *drawImage;
     if (!image) {
-        drawImage = [self.movableView renderImage];
+        drawImage = self.gridView.hidden ? nil : [self.gridView drawImage];
+        drawImage = [self.movableView renderImageOnImage:drawImage];
         drawImage = [self.drawView drawOnImage:drawImage];
     } else {
         drawImage = [self.drawView drawOnImage:image];

@@ -25,6 +25,7 @@
 - (void) handlePinchGesture:(UIPinchGestureRecognizer*)recognizer;
 - (void) handleRotateGesture:(UIRotationGestureRecognizer*)recognizer;
 - (UIImage*) renderImage;
+- (UIImage*) renderImageOnImage:(UIImage*)image;
 - (void)addImageView:(UIImage*)image;
 - (void) clearAll;
 - (void) cancelEditing;

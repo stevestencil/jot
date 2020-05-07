@@ -165,6 +165,7 @@ typedef NS_ENUM(NSUInteger, JotViewState){
 
 @property (nonatomic, readonly) BOOL photosAdded;
 
+@property (nonatomic) BOOL hasGrid;
 @property (nonatomic) CGFloat gridSize;
 @property (nonatomic, strong) UIColor *gridColor;
 
