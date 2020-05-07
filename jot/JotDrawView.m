@@ -18,9 +18,6 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 
 @interface JotDrawView ()
 
-@property (nonatomic, strong) UIImage *cachedImage;
-@property (nonatomic, strong) NSMutableArray<UIImage*> *cachedImages;
-
 @property (nonatomic, strong) NSMutableArray *pathsArray;
 @property (nonatomic, strong) NSMutableArray<NSNumber*> *pathsCounts;
 @property (nonatomic, strong) JotTouchBezier *bezierPath;
@@ -66,9 +63,6 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 #pragma mark - Undo
 
 - (void) undo {
-    [self.cachedImages removeLastObject];
-    UIImage *previousImage = [self.cachedImages lastObject];
-    self.cachedImage = previousImage;
     [self.pathsCounts removeLastObject];
     NSInteger lastCount = [[self.pathsCounts lastObject] integerValue];
     while (self.pathsArray.count > lastCount) {
@@ -84,9 +78,6 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 
 - (void)clearDrawing
 {
-    self.cachedImage = nil;
-    [self.cachedImages removeAllObjects];
-    
     [self.pathsArray removeAllObjects];
     [self.pathsCounts removeAllObjects];
     
@@ -138,6 +129,12 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     return [self isAxis:pointA.x closeToAxis:pointB.x] && [self isAxis:pointA.y closeToAxis:pointB.y];
 }
 
+- (CGFloat) distanceBetweenPointA:(CGPoint)pointA pointB:(CGPoint)pointB {
+    CGFloat xDist = (pointB.x - pointA.x);
+    CGFloat yDist = (pointB.y - pointA.y);
+    return sqrt(xDist * xDist + yDist * yDist);
+}
+
 - (void)drawTouchBeganAtPoint:(CGPoint)touchPoint
 {
     self.lastVelocity = self.initialVelocity;
@@ -184,56 +181,45 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         if ([self isAxis:touchPoint.x closeToAxis:self.bezierPath.startPoint.x]) {
             snappedPoint.x = self.bezierPath.startPoint.x;
         }
-        if ([self isAxis:touchPoint.y closeToAxis:self.bezierPath.startPoint.y]) {
+        // if x has been snapped, do not snap y
+        if (snappedPoint.x != self.bezierPath.startPoint.x && [self isAxis:touchPoint.y closeToAxis:self.bezierPath.startPoint.y]) {
             snappedPoint.y = self.bezierPath.startPoint.y;
         }
         CGFloat oldDifferenceX = CGFLOAT_MAX;
         CGFloat oldDifferenceY = CGFLOAT_MAX;
+        // Iterate through all existing paths to see if the touch is close to any other point's axis
         for (id pathObject in self.pathsArray) {
-            if ([pathObject isKindOfClass:[JotTouchPoint class]]) {
-                JotTouchPoint *point = (JotTouchPoint*)pathObject;
-                if ([self isAxis:touchPoint.x closeToAxis:point.point.x]) {
-                    CGFloat newDifference = fabs(touchPoint.x - point.point.x);
-                    if (newDifference < oldDifferenceX) {
-                        oldDifferenceX = newDifference;
-                        snappedPoint.x = point.point.x;
-                    }
-                }
-                if ([self isAxis:touchPoint.x closeToAxis:point.point.y]) {
-                    CGFloat newDifference = fabs(touchPoint.y - point.point.y);
-                    if (newDifference < oldDifferenceY) {
-                        oldDifferenceY = newDifference;
-                        snappedPoint.y = point.point.y;
-                    }
-                }
-            } else if ([pathObject isKindOfClass:[JotTouchBezier class]]) {
+            if ([pathObject isKindOfClass:[JotTouchBezier class]]) {
                 JotTouchBezier *path = (JotTouchBezier*)pathObject;
-                if ([self isAxis:touchPoint.x closeToAxis:path.startPoint.x]) {
-                    CGFloat newDifference = fabs(touchPoint.x - path.startPoint.x);
-                    if (newDifference < oldDifferenceX) {
-                        oldDifferenceX = newDifference;
-                        snappedPoint.x = path.startPoint.x;
+                // if the path is not a straight line or is our current path, ignore it
+                if (path.straightLine && path != self.bezierPath) {
+                    if ([self isAxis:touchPoint.x closeToAxis:path.startPoint.x]) {
+                        CGFloat newDifference = fabs(touchPoint.x - path.startPoint.x);
+                        if (newDifference < oldDifferenceX) {
+                            oldDifferenceX = newDifference;
+                            snappedPoint.x = path.startPoint.x;
+                        }
                     }
-                }
-                if ([self isAxis:touchPoint.x closeToAxis:path.endPoint.x]) {
-                    CGFloat newDifference = fabs(touchPoint.x - path.endPoint.x);
-                    if (newDifference < oldDifferenceX) {
-                        oldDifferenceX = newDifference;
-                        snappedPoint.x = path.endPoint.x;
+                    if ([self isAxis:touchPoint.x closeToAxis:path.endPoint.x]) {
+                        CGFloat newDifference = fabs(touchPoint.x - path.endPoint.x);
+                        if (newDifference < oldDifferenceX) {
+                            oldDifferenceX = newDifference;
+                            snappedPoint.x = path.endPoint.x;
+                        }
                     }
-                }
-                if ([self isAxis:touchPoint.y closeToAxis:path.startPoint.y]) {
-                    CGFloat newDifference = fabs(touchPoint.y - path.startPoint.y);
-                    if (newDifference < oldDifferenceY) {
-                        oldDifferenceY = newDifference;
-                        snappedPoint.y = path.startPoint.y;
+                    if ([self isAxis:touchPoint.y closeToAxis:path.startPoint.y]) {
+                        CGFloat newDifference = fabs(touchPoint.y - path.startPoint.y);
+                        if (newDifference < oldDifferenceY) {
+                            oldDifferenceY = newDifference;
+                            snappedPoint.y = path.startPoint.y;
+                        }
                     }
-                }
-                if ([self isAxis:touchPoint.y closeToAxis:path.endPoint.y]) {
-                    CGFloat newDifference = fabs(touchPoint.y - path.endPoint.y);
-                    if (newDifference < oldDifferenceY) {
-                        oldDifferenceY = newDifference;
-                        snappedPoint.y = path.endPoint.y;
+                    if ([self isAxis:touchPoint.y closeToAxis:path.endPoint.y]) {
+                        CGFloat newDifference = fabs(touchPoint.y - path.endPoint.y);
+                        if (newDifference < oldDifferenceY) {
+                            oldDifferenceY = newDifference;
+                            snappedPoint.y = path.endPoint.y;
+                        }
                     }
                 }
             }
@@ -276,7 +262,8 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         self.pointsArray[0] = self.pointsArray[3];
         self.pointsArray[1] = self.pointsArray[4];
         
-        [self drawBitmap];
+        self.bezierPath = nil;
+        [self setNeedsDisplay];
         
         [self.pointsArray removeLastObject];
         [self.pointsArray removeLastObject];
@@ -287,10 +274,7 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 
 - (void)drawTouchEnded
 {
-    [self drawBitmap];
-    if (self.cachedImage) {
-        [self.cachedImages addObject:self.cachedImage];
-    }
+    self.bezierPath = nil;
     self.lastVelocity = self.initialVelocity;
     self.lastWidth = self.strokeWidth;
     [self.pathsCounts addObject:@(self.pathsArray.count)];
@@ -305,37 +289,9 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
      }
  }
 
-- (void)drawBitmap
-{
-    UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, [UIScreen mainScreen].scale);
-    
-    if (self.cachedImage) {
-        [self.cachedImage drawInRect:self.frame];
-    }
-
-    [self.bezierPath jotDrawBezier];
-    self.bezierPath = nil;
-    
-    if (self.pointsArray.count == 1) {
-        JotTouchPoint *touchPoint = [self.pointsArray firstObject];
-        touchPoint.strokeColor = self.strokeColor;
-        touchPoint.strokeWidth = 1.5f * [self strokeWidthForVelocity:1.f];
-        [self.pathsArray addObject:touchPoint];
-        [touchPoint.strokeColor setFill];
-        [JotTouchBezier jotDrawBezierPoint:[touchPoint CGPointValue]
-                                 withWidth:touchPoint.strokeWidth];
-    }
-    
-    self.cachedImage = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    [self setNeedsDisplay];
-}
-
 - (void)drawRect:(CGRect)rect
 {
-    [self drawGridIfNeeded];
-    [self.cachedImage drawInRect:rect];
-    [self.bezierPath jotDrawBezier];
+    [self drawAllPaths];
 }
 
 - (CGFloat)strokeWidthForVelocity:(CGFloat)velocity
@@ -379,7 +335,6 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     CGFloat scale = size.width / CGRectGetWidth(self.bounds);
     
     UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, scale);
-    [self drawGridIfNeeded];
     [self drawAllPaths];
     UIImage *pathsImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
@@ -412,6 +367,7 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 
 - (void)drawAllPaths
 {
+    [self drawGridIfNeeded];
     for (NSObject *path in self.pathsArray) {
         if ([path isKindOfClass:[JotTouchBezier class]]) {
             [(JotTouchBezier *)path jotDrawBezier];
@@ -424,13 +380,6 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 }
 
 #pragma mark - Setters & Getters
-
-- (NSMutableArray<UIImage *> *)cachedImages {
-    if (!_cachedImages) {
-        _cachedImages = [NSMutableArray new];
-    }
-    return _cachedImages;
-}
 
 - (UIBezierPath *)gridPath {
     if (!_gridPath) {
