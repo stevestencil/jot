@@ -156,7 +156,7 @@
         self.pinchRecognizer.enabled =
         self.rotationRecognizer.enabled = (state == JotViewStateText) || (state == JotViewStateImage);
         
-        if (state != JotViewStateImage) {
+        if (state != JotViewStateImage || state != JotViewStateText) {
             [self.movableView cancelEditing];
         }
         
@@ -464,14 +464,13 @@
 
 - (void) handleLongPressGesture:(UILongPressGestureRecognizer*)recognizer {
     if (self.photosAdded) {
-        if (recognizer.state == UIGestureRecognizerStateBegan) {
-            JotMovableView *view = [self.movableView handleLongPressGesture:recognizer];
-            if (view) {
-                if (view.type == JotMovableViewContainerTypeImage) {
-                    self.state = JotViewStateImage;
-                } else if (view.type == JotMovableViewContainerTypeText) {
-                    self.state = JotViewStateText;
-                }
+        
+        JotMovableView *view = [self.movableView handleLongPressGesture:recognizer];
+        if (view) {
+            if (view.type == JotMovableViewContainerTypeImage) {
+                self.state = JotViewStateImage;
+            } else if (view.type == JotMovableViewContainerTypeText) {
+                self.state = JotViewStateText;
             }
         }
     }
