@@ -88,6 +88,16 @@
 
 #pragma mark - Properties
 
+- (void) moveTextViewsToFront {
+    for (JotMovableView *view in self.movableViews) {
+        if (view.type == JotMovableViewContainerTypeText) {
+            [self bringSubviewToFront:view];
+        }
+    }
+    [self.movableViews removeAllObjects];
+    [self.movableViews addObjectsFromArray:self.subviews];
+}
+
 - (void)addImageView:(UIImage *)image {
     JotMovableView *containerView = [JotMovableView movableViewWithImage:image];
     [self addSubview:containerView];
@@ -95,6 +105,7 @@
     [self.movableViews addObject:containerView];
     [self.viewsLastEdited addObject:containerView];
     self.movingView = containerView;
+    [self moveTextViewsToFront];
     if ([self.delegate respondsToSelector:@selector(jotMovableViewContainerUndoSnapshot:)]) {
         [self.delegate jotMovableViewContainerUndoSnapshot:self];
     }
@@ -107,6 +118,7 @@
     [self.movableViews addObject:containerView];
     [self.viewsLastEdited addObject:containerView];
     self.movingView = containerView;
+    [self moveTextViewsToFront];
     if ([self.delegate respondsToSelector:@selector(jotMovableViewContainerUndoSnapshot:)]) {
         [self.delegate jotMovableViewContainerUndoSnapshot:self];
     }
@@ -279,15 +291,21 @@
     for (JotMovableView *movableView in self.movableViews) {
         CGRect frame = movableView.frame;
         CGSize size = frame.size;
-        if (movableView.type == JotMovableViewContainerTypeImage) {
+        if (movableView.type == JotMovableViewContainerTypeImage || movableView.type == JotMovableViewContainerTypeText) {
             CGContextSaveGState(context);
             CGContextTranslateCTM(context, frame.origin.x, frame.origin.y);
             CGContextTranslateCTM(context, size.width / 2.0f, size.height / 2.0f);
             CGAffineTransform transform = movableView.transform;
             CGFloat angle = atan2f(transform.b, transform.a);
             CGContextRotateCTM(context, angle);
-            CGRect drawingRect = CGRectMake(-size.width / 2.0f, -size.height / 2.0f, size.width, size.height);
-            [movableView.image drawInRect:drawingRect blendMode:kCGBlendModeNormal alpha:1.0f];
+            if (movableView.type == JotMovableViewContainerTypeImage) {
+                CGRect drawingRect = CGRectMake(-size.width / 2.0f, -size.height / 2.0f, size.width, size.height);
+                [movableView.image drawInRect:drawingRect blendMode:kCGBlendModeNormal alpha:1.0f];
+            } else if (movableView.type == JotMovableViewContainerTypeText) {
+                CGRect drawingRect = CGRectMake(-size.width / 2.0f, -size.height / 2.0f, size.width, size.height);
+                NSAttributedString *text = [movableView attributedString];
+                [text drawAtPoint:drawingRect.origin];
+            }
             CGContextRestoreGState(context);
         }
     }

@@ -14,7 +14,9 @@
 @property (strong, nonatomic) NSMutableArray<NSDictionary*> *editHistory;
 @property (weak, nonatomic, readonly) UIImageView *imageView;
 @property (weak, nonatomic, readonly) UITextField *textLabel;
-@property (nonatomic) CGFloat originalFontSize;
+// font size relative to width of superview
+@property (nonatomic) CGFloat originalFontSizeRatio;
+@property (nonatomic) CGFloat currentFontSizeRatio;
 
 @end
 
@@ -32,6 +34,26 @@
     JotMovableView *container = [JotMovableView new];
     [container addTextLabelWithText:text];
     return container;
+}
+
+- (instancetype) init {
+    if (self = [super init]) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(deviceRotated) name:UIDeviceOrientationDidChangeNotification object:nil];
+    }
+    return self;
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void) deviceRotated {
+    if (self.type == JotMovableViewContainerTypeText) {
+        CGFloat fontSize = self.superview.frame.size.width * self.currentFontSizeRatio;
+        self.textLabel.font = [self.textLabel.font fontWithSize:fontSize];
+        [self.textLabel sizeToFit];
+        [self updateConstraintsForSize:self.textLabel.frame.size center:self.center];
+    }
 }
 
 - (void) addImageViewWithImage:(UIImage*)image {
@@ -52,7 +74,6 @@
     UITextField *label = [[UITextField alloc] init];
     label.font = [label.font fontWithSize:50.0];
     label.userInteractionEnabled = NO;
-    self.originalFontSize = label.font.pointSize;
     label.text = text;
     [label sizeToFit];
     [self addSubview:label];
@@ -68,6 +89,8 @@
 - (void)didMoveToSuperview {
     [super didMoveToSuperview];
     self.center = self.superview.center;
+    self.originalFontSizeRatio = self.textLabel.font.pointSize / self.superview.frame.size.width;
+    self.currentFontSizeRatio = self.originalFontSizeRatio;
 }
 
 - (void) updateConstraintsForSize:(CGSize)size center:(CGPoint)center {
@@ -90,6 +113,10 @@
         self.textLabel.userInteractionEnabled = NO;
         [self.textLabel resignFirstResponder];
     }
+}
+
+- (NSAttributedString *)attributedString {
+    return self.textLabel.attributedText;
 }
 
 #pragma mark - Undo
@@ -139,9 +166,11 @@
             newSize.height = self.superview.frame.size.height;
             newSize.width = self.superview.frame.size.height * self.aspectRatio;
         }
+        newSize = CGSizeMake(newSize.width * scale, newSize.height * scale);
         [self updateConstraintsForSize:newSize center:center];
     } else if (self.type == JotMovableViewContainerTypeText) {
-        CGFloat fontSize = self.originalFontSize * scale;
+        CGFloat fontSize = (self.originalFontSizeRatio * self.superview.frame.size.width) * scale;
+        self.currentFontSizeRatio = fontSize / self.superview.frame.size.width;
         self.textLabel.font = [self.textLabel.font fontWithSize:fontSize];
         [self.textLabel sizeToFit];
         [self updateConstraintsForSize:self.textLabel.frame.size center:center];
@@ -170,7 +199,7 @@
 }
 
 - (CGAffineTransform)transform {
-    return self.imageView.transform;
+    return self.imageView ? self.imageView.transform : self.textLabel.transform;
 }
 
 #pragma mark - Setters & Getters

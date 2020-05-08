@@ -33,4 +33,6 @@ typedef enum {
 - (instancetype) undo;
 - (void) enableEditing:(BOOL)editing;
 
+- (NSAttributedString*) attributedString;
+
 @end
