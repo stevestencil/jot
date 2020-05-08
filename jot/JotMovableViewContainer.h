@@ -6,6 +6,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "JotMovableView.h"
 
 @class JotMovableViewContainer;
 
@@ -21,12 +22,16 @@
 @property (nonatomic, readonly) NSInteger viewCount;
 @property (nonatomic, readonly) BOOL isMovingView;
 
-- (void)handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer;
+- (JotMovableView*) handleTapGesture:(UITapGestureRecognizer*)recognizer;
+- (JotMovableView*) handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer;
+- (JotMovableView*) handlePanGesture:(UIPanGestureRecognizer*)recognizer;
 - (void) handlePinchGesture:(UIPinchGestureRecognizer*)recognizer;
 - (void) handleRotateGesture:(UIRotationGestureRecognizer*)recognizer;
+
 - (UIImage*) renderImage;
 - (UIImage*) renderImageOnImage:(UIImage*)image;
 - (void)addImageView:(UIImage*)image;
+- (void) addTextViewWithText:(NSString*)text;
 - (void) clearAll;
 - (void) cancelEditing;
 - (void) undo;

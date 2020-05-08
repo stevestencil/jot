@@ -6,7 +6,6 @@
 //
 
 #import "JotMovableViewContainer.h"
-#import "JotMovableView.h"
 #import "Masonry.h"
 
 @interface JotMovableViewContainer ()
@@ -90,7 +89,19 @@
 #pragma mark - Properties
 
 - (void)addImageView:(UIImage *)image {
-    JotMovableView *containerView = [JotMovableView imageViewContainerWithImage:image];
+    JotMovableView *containerView = [JotMovableView movableViewWithImage:image];
+    [self addSubview:containerView];
+    [containerView resizeWithScale:1.0];
+    [self.movableViews addObject:containerView];
+    [self.viewsLastEdited addObject:containerView];
+    self.movingView = containerView;
+    if ([self.delegate respondsToSelector:@selector(jotMovableViewContainerUndoSnapshot:)]) {
+        [self.delegate jotMovableViewContainerUndoSnapshot:self];
+    }
+}
+
+- (void) addTextViewWithText:(NSString*)text {
+    JotMovableView *containerView = [JotMovableView movableViewWithText:text];
     [self addSubview:containerView];
     [containerView resizeWithScale:1.0];
     [self.movableViews addObject:containerView];
@@ -111,19 +122,30 @@
     return nil;
 }
 
-- (void)handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer {
+- (JotMovableView*)handleTapGesture:(UITapGestureRecognizer *)recognizer {
+    for (JotMovableView *view in self.movableViews) {
+        [view enableEditing:NO];
+    }
+    CGPoint point = [recognizer locationInView:self];
+    JotMovableView *view = [self imageViewAtPoint:point];
+    if (view.type == JotMovableViewContainerTypeText) {
+        [view enableEditing:YES];
+        return view;
+    }
+    return nil;
+}
+
+- (JotMovableView *)handlePanGesture:(UIPanGestureRecognizer *)recognizer {
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
-            JotMovableView *view = [self imageViewAtPoint:point];
-            self.movingView = view;
+            self.movingView = [self imageViewAtPoint:point] ? : self.movingView;
             if (!self.movingView) {
-                return;
+                return nil;
             }
             [self captureUndoSnapshot];
-            // add 5 points to make the view move slightly to indicate it's selected
-            self.referenceOffset = CGPointMake(view.center.x - point.x + 5.0,
-                                               view.center.y - point.y - 5.0);
+            self.referenceOffset = CGPointMake(self.movingView.center.x - point.x,
+                                               self.movingView.center.y - point.y);
             CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
                                             point.y + self.referenceOffset.y);
             [self.movingView moveViewToCenter:newCenter];
@@ -132,7 +154,7 @@
             
         case UIGestureRecognizerStateChanged: {
             if (!self.movingView) {
-                return;
+                return nil;
             }
             CGPoint point = [recognizer locationInView:self];
             CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
@@ -149,13 +171,18 @@
         default:
             break;
     }
+    return self.movingView;
+}
+
+- (JotMovableView *)handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer {
+    return [self handlePanGesture:(UIPanGestureRecognizer*)recognizer];
 }
 
 - (void) handlePinchGesture:(UIPinchGestureRecognizer*)recognizer {
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
-            self.movingView = [self imageViewAtPoint:point];
+            self.movingView = [self imageViewAtPoint:point] ? : self.movingView;
             if (!self.movingView) {
                 return;
             }
@@ -193,7 +220,7 @@
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
-            self.movingView = [self imageViewAtPoint:point];
+            self.movingView = [self imageViewAtPoint:point] ? : self.movingView;
             if (!self.movingView) {
                 return;
             }

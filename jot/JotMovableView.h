@@ -12,11 +12,13 @@
 
 typedef enum {
     JotMovableViewContainerTypeImage,
+    JotMovableViewContainerTypeText
 } JotMovableViewContainerType;
 
 @interface JotMovableView : UIView
 
-+ (instancetype) imageViewContainerWithImage:(UIImage*)image;
++ (instancetype) movableViewWithImage:(UIImage*)image;
++ (instancetype) movableViewWithText:(NSString*)text;
 
 @property (nonatomic, readonly) JotMovableViewContainerType type;
 @property (nonatomic, readonly) UIImage *image;
@@ -27,5 +29,6 @@ typedef enum {
 - (void) moveViewToCenter:(CGPoint)center;
 - (void) captureUndoObject;
 - (instancetype) undo;
+- (void) enableEditing:(BOOL)editing;
 
 @end

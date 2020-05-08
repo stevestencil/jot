@@ -14,6 +14,7 @@
 #import "UIImage+Jot.h"
 #import "JotDrawingContainer.h"
 #import "JotMovableViewContainer.h"
+//#import "JotMovableView.h"
 #import "JotGridView.h"
 
 @interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotDrawingContainerDelegate, JotMovableViewContainerDelegate>
@@ -25,11 +26,11 @@
 @property (nonatomic, strong) UILongPressGestureRecognizer *longPressRecognizer;
 @property (nonatomic, strong, readwrite) JotDrawingContainer *drawingContainer;
 @property (nonatomic, strong) JotDrawView *drawView;
-@property (nonatomic, strong) JotTextEditView *textEditView;
-@property (nonatomic, strong) JotTextView *textView;
+//@property (nonatomic, strong) JotTextEditView *textEditView;
+//@property (nonatomic, strong) JotTextView *textView;
 @property (nonatomic, strong) JotMovableViewContainer *movableView;
 @property (nonatomic, strong) JotGridView *gridView;
-@property (nonatomic, strong) NSMutableArray<id> *viewsInEditOrder;
+@property (nonatomic, strong) NSMutableArray<__kindof UIView*> *viewsInEditOrder;
 
 @end
 
@@ -40,9 +41,9 @@
     if ((self = [super init])) {
         
         _drawView = [JotDrawView new];
-        _textEditView = [JotTextEditView new];
-        _textEditView.delegate = self;
-        _textView = [JotTextView new];
+//        _textEditView = [JotTextEditView new];
+//        _textEditView.delegate = self;
+//        _textView = [JotTextView new];
         _drawingContainer = [JotDrawingContainer new];
         self.drawingContainer.delegate = self;
         _movableView = [JotMovableViewContainer new];
@@ -51,25 +52,25 @@
         JotGridView *gridView = [[JotGridView alloc] init];
         self.gridView = gridView;
         
-        _font = self.textView.font;
-        self.textEditView.font = self.font;
-        _fontSize = self.textView.fontSize;
-        self.textEditView.fontSize = self.fontSize;
-        _textAlignment = self.textView.textAlignment;
-        self.textEditView.textAlignment = NSTextAlignmentLeft;
-        _textColor = self.textView.textColor;
-        self.textEditView.textColor = self.textColor;
+//        _font = self.textView.font;
+//        self.textEditView.font = self.font;
+//        _fontSize = self.textView.fontSize;
+//        self.textEditView.fontSize = self.fontSize;
+//        _textAlignment = self.textView.textAlignment;
+//        self.textEditView.textAlignment = NSTextAlignmentLeft;
+//        _textColor = self.textView.textColor;
+//        self.textEditView.textColor = self.textColor;
         _textString = @"";
         _drawingColor = self.drawView.strokeColor;
         _drawingStrokeWidth = self.drawView.strokeWidth;
-        _textEditingInsets = self.textEditView.textEditingInsets;
-        _initialTextInsets = self.textView.initialTextInsets;
+//        _textEditingInsets = self.textEditView.textEditingInsets;
+//        _initialTextInsets = self.textView.initialTextInsets;
         _state = JotViewStateDefault;
         
-        _pinchRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(handlePinchOrRotateGesture:)];
+        _pinchRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(handlePinchGesture:)];
         self.pinchRecognizer.delegate = self;
         
-        _rotationRecognizer = [[UIRotationGestureRecognizer alloc] initWithTarget:self action:@selector(handlePinchOrRotateGesture:)];
+        _rotationRecognizer = [[UIRotationGestureRecognizer alloc] initWithTarget:self action:@selector(handleRotateGesture:)];
         self.rotationRecognizer.delegate = self;
         
         _panRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanGesture:)];
@@ -87,7 +88,7 @@
 
 - (void)dealloc
 {
-    self.textEditView.delegate = nil;
+//    self.textEditView.delegate = nil;
     self.drawingContainer.delegate = nil;
 }
 
@@ -118,15 +119,15 @@
         make.edges.equalTo(self.drawingContainer);
     }];
     
-    [self.drawingContainer addSubview:self.textView];
-    [self.textView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.edges.equalTo(self.drawingContainer);
-    }];
+//    [self.drawingContainer addSubview:self.textView];
+//    [self.textView mas_makeConstraints:^(MASConstraintMaker *make) {
+//        make.edges.equalTo(self.drawingContainer);
+//    }];
     
-    [self.view addSubview:self.textEditView];
-    [self.textEditView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.edges.equalTo(self.view);
-    }];
+//    [self.view addSubview:self.textEditView];
+//    [self.textEditView mas_makeConstraints:^(MASConstraintMaker *make) {
+//        make.edges.equalTo(self.view);
+//    }];
     
     [self.drawingContainer addGestureRecognizer:self.tapRecognizer];
     [self.drawingContainer addGestureRecognizer:self.panRecognizer];
@@ -142,8 +143,8 @@
     if (_state != state) {
         _state = state;
         
-        self.textView.hidden =
-        self.textEditView.isEditing = (state == JotViewStateEditingText);
+//        self.textView.hidden =
+//        self.textEditView.isEditing = (state == JotViewStateEditingText);
         
         if (state == JotViewStateEditingText
             && [self.delegate respondsToSelector:@selector(jotViewController:isEditingText:)]) {
@@ -176,12 +177,12 @@
 {
     if (![_textString isEqualToString:textString]) {
         _textString = textString;
-        if (![self.textView.textString isEqualToString:textString]) {
-            self.textView.textString = textString;
-        }
-        if (![self.textEditView.textString isEqualToString:textString]) {
-            self.textEditView.textString = textString;
-        }
+//        if (![self.textView.textString isEqualToString:textString]) {
+//            self.textView.textString = textString;
+//        }
+//        if (![self.textEditView.textString isEqualToString:textString]) {
+//            self.textEditView.textString = textString;
+//        }
     }
 }
 
@@ -189,8 +190,8 @@
 {
     if (_font != font) {
         _font = font;
-        self.textView.font =
-        self.textEditView.font = font;
+//        self.textView.font =
+//        self.textEditView.font = font;
     }
 }
 
@@ -198,8 +199,8 @@
 {
     if (_fontSize != fontSize) {
         _fontSize = fontSize;
-        self.textView.fontSize =
-        self.textEditView.fontSize = fontSize;
+//        self.textView.fontSize =
+//        self.textEditView.fontSize = fontSize;
     }
 }
 
@@ -207,8 +208,8 @@
 {
     if (_textAlignment != textAlignment) {
         _textAlignment = textAlignment;
-        self.textView.textAlignment =
-        self.textEditView.textAlignment = textAlignment;
+//        self.textView.textAlignment =
+//        self.textEditView.textAlignment = textAlignment;
     }
 }
 
@@ -216,8 +217,8 @@
 {
     if (_textColor != textColor) {
         _textColor = textColor;
-        self.textView.textColor =
-        self.textEditView.textColor = textColor;
+//        self.textView.textColor =
+//        self.textEditView.textColor = textColor;
     }
 }
 
@@ -225,7 +226,7 @@
 {
     if (!UIEdgeInsetsEqualToEdgeInsets(_initialTextInsets, initialTextInsets)) {
         _initialTextInsets = initialTextInsets;
-        self.textView.initialTextInsets = initialTextInsets;
+//        self.textView.initialTextInsets = initialTextInsets;
     }
 }
 
@@ -233,7 +234,7 @@
 {
     if (!UIEdgeInsetsEqualToEdgeInsets(_textEditingInsets, textEditingInsets)) {
         _textEditingInsets = textEditingInsets;
-        self.textEditView.textEditingInsets = textEditingInsets;
+//        self.textEditView.textEditingInsets = textEditingInsets;
     }
 }
 
@@ -241,12 +242,12 @@
 {
     if (_fitOriginalFontSizeToViewWidth != fitOriginalFontSizeToViewWidth) {
         _fitOriginalFontSizeToViewWidth = fitOriginalFontSizeToViewWidth;
-        self.textView.fitOriginalFontSizeToViewWidth = fitOriginalFontSizeToViewWidth;
-        if (fitOriginalFontSizeToViewWidth) {
-            self.textEditView.textAlignment = self.textAlignment;
-        } else {
-            self.textEditView.textAlignment = NSTextAlignmentLeft;
-        }
+//        self.textView.fitOriginalFontSizeToViewWidth = fitOriginalFontSizeToViewWidth;
+//        if (fitOriginalFontSizeToViewWidth) {
+//            self.textEditView.textAlignment = self.textAlignment;
+//        } else {
+//            self.textEditView.textAlignment = NSTextAlignmentLeft;
+//        }
     }
 }
 
@@ -254,7 +255,7 @@
 {
     if (_clipBoundsToEditingInsets != clipBoundsToEditingInsets) {
         _clipBoundsToEditingInsets = clipBoundsToEditingInsets;
-        self.textEditView.clipBoundsToEditingInsets = clipBoundsToEditingInsets;
+//        self.textEditView.clipBoundsToEditingInsets = clipBoundsToEditingInsets;
     }
 }
 
@@ -299,15 +300,17 @@
 - (void) undo {
     id lastView = [self.viewsInEditOrder lastObject];
     [self.viewsInEditOrder removeLastObject];
-    if ([lastView respondsToSelector:@selector(undo)]) {
-        [lastView undo];
+    if ([lastView isKindOfClass:[JotMovableView class]]) {
+        [(JotMovableView*)lastView undo];
+    } else if ([lastView isKindOfClass:[JotDrawView class]]) {
+        [(JotMovableView*)lastView undo];
     }
 }
 
 - (void)clearText
 {
     self.textString = @"";
-    [self.textView clearText];
+//    [self.textView clearText];
 }
 
 - (void)clearImages {
@@ -316,6 +319,11 @@
 
 - (void)addBackgroundImage:(UIImage *)image {
     [self.movableView addImageView:image];
+}
+
+- (void)addTextViewWithText:(NSString *)text {
+    [self.movableView addTextViewWithText:text];
+    self.state = JotViewStateText;
 }
 
 - (BOOL)photosAdded {
@@ -359,7 +367,8 @@
     } else {
         drawImage = [self.drawView drawOnImage:image];
     }
-    return [self.textView drawTextOnImage:drawImage];
+    return drawImage;
+//    return [self.textView drawTextOnImage:drawImage];
 }
 
 - (UIImage *)renderImage
@@ -389,60 +398,82 @@
 {
     [self.movableView cancelEditing];
     UIImage *renderDrawingImage = [self.drawView renderDrawingWithSize:size];
-    
-    return [self.textView drawTextOnImage:renderDrawingImage];
+    return renderDrawingImage;
+//    return [self.textView drawTextOnImage:renderDrawingImage];
 }
 
 - (UIImage *)renderImageWithSize:(CGSize)size onColor:(UIColor *)color
 {
     UIImage *colorImage = [UIImage jotImageWithColor:color size:size];
-    
     UIImage *renderDrawingImage = [self.drawView drawOnImage:colorImage];
-    
-    return [self.textView drawTextOnImage:renderDrawingImage];
+    return renderDrawingImage;
+//    return [self.textView drawTextOnImage:renderDrawingImage];
 }
 
 #pragma mark - Gestures
 
 - (void)handleTapGesture:(UIGestureRecognizer *)recognizer
 {
-    if (self.state == JotViewStateImage) {
-        self.state = JotViewStateDrawing;
-        return;
-    }
-    if (!(self.state == JotViewStateEditingText)) {
-        self.state = JotViewStateEditingText;
-    }
-}
-
-- (void)handlePanGesture:(UIGestureRecognizer *)recognizer
-{
-    if (self.state == JotViewStateImage) {
-        [self.movableView handleLongPressGesture:(UILongPressGestureRecognizer*)recognizer];
-        return;
-    }
-    [self.textView handlePanGesture:recognizer];
-}
-
-- (void)handlePinchOrRotateGesture:(UIGestureRecognizer *)recognizer
-{
-    if (self.state == JotViewStateImage) {
-        if ([recognizer isKindOfClass:[UIPinchGestureRecognizer class]]) {
-            [self.movableView handlePinchGesture:(UIPinchGestureRecognizer*)recognizer];
-        } else if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
-            [self.movableView handleRotateGesture:(UIRotationGestureRecognizer*)recognizer];
+    switch (self.state) {
+        case JotViewStateImage:
+            self.state = JotViewStateDrawing;
+            break;
+        case JotViewStateText: {
+            JotMovableView *view = [self.movableView handleTapGesture:(UITapGestureRecognizer*)recognizer];
+            self.state = !!view ? JotViewStateText : JotViewStateDrawing;
+            break;
         }
-        return;
+        default:
+            break;
     }
-    [self.textView handlePinchOrRotateGesture:recognizer];
+}
+
+- (void)handlePanGesture:(UIPanGestureRecognizer *)recognizer
+{
+    switch (self.state) {
+        case JotViewStateImage:
+        case JotViewStateText:
+            [self.movableView handlePanGesture:recognizer];
+            break;
+        default:
+            break;
+    }
+}
+
+- (void)handlePinchGesture:(UIPinchGestureRecognizer*)recognizer {
+    switch (self.state) {
+        case JotViewStateImage:
+        case JotViewStateText:
+            [self.movableView handlePinchGesture:(UIPinchGestureRecognizer*)recognizer];
+            break;
+        default:
+            break;
+    }
+}
+
+- (void) handleRotateGesture:(UIRotationGestureRecognizer*)recognizer {
+    switch (self.state) {
+        case JotViewStateImage:
+        case JotViewStateText:
+            [self.movableView handleRotateGesture:(UIRotationGestureRecognizer*)recognizer];
+            break;
+        default:
+            break;
+    }
 }
 
 - (void) handleLongPressGesture:(UILongPressGestureRecognizer*)recognizer {
     if (self.photosAdded) {
         if (recognizer.state == UIGestureRecognizerStateBegan) {
-            self.state = JotViewStateImage;
+            JotMovableView *view = [self.movableView handleLongPressGesture:recognizer];
+            if (view) {
+                if (view.type == JotMovableViewContainerTypeImage) {
+                    self.state = JotViewStateImage;
+                } else if (view.type == JotMovableViewContainerTypeText) {
+                    self.state = JotViewStateText;
+                }
+            }
         }
-        [self handlePanGesture:recognizer];
     }
 }
 
@@ -460,8 +491,14 @@
 
 - (void)jotDrawingContainerTouchMovedToPoint:(CGPoint)touchPoint
 {
-    if (self.state == JotViewStateDrawing || self.state == JotViewStateStraightLineDrawing || self.state == JotViewStateErase) {
-        [self.drawView drawTouchMovedToPoint:touchPoint];
+    switch (self.state) {
+        case JotViewStateDrawing:
+        case JotViewStateStraightLineDrawing:
+        case JotViewStateErase:
+            [self.drawView drawTouchMovedToPoint:touchPoint];
+            break;
+        default:
+            break;
     }
 }
 
@@ -514,7 +551,7 @@
 
 #pragma mark - Setters & Getters
 
-- (NSMutableArray<id> *)viewsInEditOrder {
+- (NSMutableArray<__kindof UIView*> *)viewsInEditOrder {
     if (!_viewsInEditOrder) {
         _viewsInEditOrder = [NSMutableArray new];
     }

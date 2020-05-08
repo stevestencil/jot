@@ -13,16 +13,24 @@
 @property (nonatomic) CGFloat aspectRatio;
 @property (strong, nonatomic) NSMutableArray<NSDictionary*> *editHistory;
 @property (weak, nonatomic, readonly) UIImageView *imageView;
+@property (weak, nonatomic, readonly) UITextField *textLabel;
+@property (nonatomic) CGFloat originalFontSize;
 
 @end
 
 @implementation JotMovableView
 
-+ (instancetype) imageViewContainerWithImage:(UIImage*)image {
++ (instancetype) movableViewWithImage:(UIImage*)image {
     JotMovableView *container = [JotMovableView new];
     [container addImageViewWithImage:image];
     container.backgroundColor = [UIColor clearColor];
     container.aspectRatio = image.size.width / image.size.height;
+    return container;
+}
+
++ (instancetype) movableViewWithText:(NSString*)text {
+    JotMovableView *container = [JotMovableView new];
+    [container addTextLabelWithText:text];
     return container;
 }
 
@@ -40,13 +48,48 @@
     }];
 }
 
-- (void) layoutSubviews {
-    [super layoutSubviews];
+- (void) addTextLabelWithText:(NSString*)text {
+    UITextField *label = [[UITextField alloc] init];
+    label.font = [label.font fontWithSize:50.0];
+    label.userInteractionEnabled = NO;
+    self.originalFontSize = label.font.pointSize;
+    label.text = text;
+    [label sizeToFit];
+    [self addSubview:label];
+    _textLabel = label;
+    _type = JotMovableViewContainerTypeText;
+    [label mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.width.equalTo(self.mas_width);
+        make.height.equalTo(self.mas_height);
+        make.center.equalTo(self);
+    }];
 }
 
 - (void)didMoveToSuperview {
     [super didMoveToSuperview];
     self.center = self.superview.center;
+}
+
+- (void) updateConstraintsForSize:(CGSize)size center:(CGPoint)center {
+    [self mas_remakeConstraints:^(MASConstraintMaker *make) {
+        if (self.type == JotMovableViewContainerTypeImage) {
+            CGFloat widthPercentage = MAX(0.15f, floorf((size.width / CGRectGetWidth(self.superview.frame)) * 100) / 100);
+            make.width.equalTo(self.superview.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
+            make.height.equalTo(self.mas_width).dividedBy(self.aspectRatio);
+        }
+        make.centerX.equalTo(self.superview.mas_right).multipliedBy(center.x / CGRectGetWidth(self.superview.frame));
+        make.centerY.equalTo(self.superview.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.superview.frame));
+    }];
+}
+
+- (void)enableEditing:(BOOL)editing {
+    if (editing) {
+        self.textLabel.userInteractionEnabled = YES;
+        [self.textLabel becomeFirstResponder];
+    } else {
+        self.textLabel.userInteractionEnabled = NO;
+        [self.textLabel resignFirstResponder];
+    }
 }
 
 #pragma mark - Undo
@@ -69,14 +112,7 @@
     CGSize size = [lastCapture[@"size"] CGSizeValue];
     CGPoint center = [lastCapture[@"center"] CGPointValue];
     CGAffineTransform transform = [lastCapture[@"transform"] CGAffineTransformValue];
-    
-    CGFloat widthPercentage = MAX(0.15f, floorf((size.width / CGRectGetWidth(self.superview.frame)) * 100) / 100);
-    [self mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.width.equalTo(self.superview.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
-        make.height.equalTo(self.mas_width).dividedBy(self.aspectRatio);
-        make.centerX.equalTo(self.superview.mas_right).multipliedBy(center.x / CGRectGetWidth(self.superview.frame));
-        make.centerY.equalTo(self.superview.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.superview.frame));
-    }];
+    [self updateConstraintsForSize:size center:center];
     self.transform = transform;
     [self.editHistory removeLastObject];
     return self;
@@ -85,32 +121,27 @@
 #pragma mark - Moving, Resizing and Rotation
 
 - (void) resizeWithSize:(CGSize)size {
-    CGFloat widthPercentage = MAX(0.15f, floorf((size.width / CGRectGetWidth(self.superview.frame)) * 100) / 100);
-    [self mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.width.equalTo(self.superview.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
-        make.height.equalTo(self.mas_width).dividedBy(self.aspectRatio);
-        make.centerX.equalTo(self.superview.mas_right).multipliedBy(self.center.x / CGRectGetWidth(self.superview.frame));
-        make.centerY.equalTo(self.superview.mas_bottom).multipliedBy(self.center.y / CGRectGetHeight(self.superview.frame));
-    }];
+    [self updateConstraintsForSize:size center:self.center];
 }
 
 - (void)resizeWithScale:(CGFloat)scale {
-    CGSize newSize = CGSizeMake(self.superview.frame.size.width, self.superview.frame.size.width / self.aspectRatio);
-    if (newSize.height > self.superview.frame.size.height) {
-        newSize.height = self.superview.frame.size.height;
-        newSize.width = self.superview.frame.size.height * self.aspectRatio;
+    if (self.type == JotMovableViewContainerTypeImage) {
+        CGSize newSize = CGSizeMake(self.superview.frame.size.width, self.superview.frame.size.width / self.aspectRatio);
+        if (newSize.height > self.superview.frame.size.height) {
+            newSize.height = self.superview.frame.size.height;
+            newSize.width = self.superview.frame.size.height * self.aspectRatio;
+        }
+        [self resizeWithSize:CGSizeMake(newSize.width * scale, newSize.height * scale)];
+    } else if (self.type == JotMovableViewContainerTypeText) {
+        CGFloat fontSize = self.originalFontSize * scale;
+        self.textLabel.font = [self.textLabel.font fontWithSize:fontSize];
+        [self.textLabel sizeToFit];
+        [self resizeWithSize:self.textLabel.frame.size];
     }
-    [self resizeWithSize:CGSizeMake(newSize.width * scale, newSize.height * scale)];
 }
 
 - (void) moveViewToCenter:(CGPoint)center {
-    CGFloat widthPercentage = floorf((CGRectGetWidth(self.frame) / CGRectGetWidth(self.superview.frame)) * 100) / 100;
-    [self mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.width.equalTo(self.superview.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
-        make.height.equalTo(self.mas_width).dividedBy(self.aspectRatio);
-        make.centerX.equalTo(self.superview.mas_right).multipliedBy(center.x / CGRectGetWidth(self.superview.frame));
-        make.centerY.equalTo(self.superview.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.superview.frame));
-    }];
+    [self updateConstraintsForSize:self.frame.size center:center];
 }
 
 - (void)setTransform:(CGAffineTransform)transform {
@@ -127,6 +158,7 @@
         transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(-180));
     }
     self.imageView.transform = transform;
+    self.textLabel.transform = transform;
 }
 
 - (CGAffineTransform)transform {
