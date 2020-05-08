@@ -186,6 +186,8 @@
             if (!self.movingView) {
                 return;
             }
+            self.referenceOffset = CGPointMake(self.movingView.center.x - point.x,
+                                               self.movingView.center.y - point.y);
             // If rotate is also active we only want to capture a snapshot once
             // Otherwise we'll have to undo twice in order to reverse the pinch
             // and rotate mutations
@@ -200,8 +202,11 @@
             if (!self.movingView) {
                 return;
             }
+            CGPoint point = [recognizer locationInView:self];
+            CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
+                                            point.y + self.referenceOffset.y);
             CGFloat scale = self.activePinchRecognizer.scale * self.scale;
-            [self.movingView resizeWithScale:scale];
+            [self.movingView resizeWithScale:scale moveToCenter:newCenter];
             break;
         }
             
@@ -224,6 +229,8 @@
             if (!self.movingView) {
                 return;
             }
+            self.referenceOffset = CGPointMake(self.movingView.center.x - point.x,
+                                               self.movingView.center.y - point.y);
             [self captureUndoSnapshot];
             self.currentRotateTransform = self.referenceRotateTransform;
             self.activeRotationRecognizer = (UIRotationGestureRecognizer *)recognizer;
@@ -234,6 +241,10 @@
             if (!self.movingView) {
                 return;
             }
+            CGPoint point = [recognizer locationInView:self];
+            CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
+                                            point.y + self.referenceOffset.y);
+            [self.movingView moveViewToCenter:newCenter];
             CGAffineTransform currentTransform = self.referenceRotateTransform;
             self.currentRotateTransform = CGAffineTransformRotate(self.referenceRotateTransform, recognizer.rotation);
             currentTransform = CGAffineTransformRotate(currentTransform, self.activeRotationRecognizer.rotation);

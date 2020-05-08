@@ -125,23 +125,31 @@
 }
 
 - (void)resizeWithScale:(CGFloat)scale {
+    [self resizeWithScale:scale moveToCenter:self.center];
+}
+
+- (void) moveViewToCenter:(CGPoint)center {
+    [self updateConstraintsForSize:self.frame.size center:center];
+}
+
+- (void) resizeWithScale:(CGFloat)scale moveToCenter:(CGPoint)center {
     if (self.type == JotMovableViewContainerTypeImage) {
         CGSize newSize = CGSizeMake(self.superview.frame.size.width, self.superview.frame.size.width / self.aspectRatio);
         if (newSize.height > self.superview.frame.size.height) {
             newSize.height = self.superview.frame.size.height;
             newSize.width = self.superview.frame.size.height * self.aspectRatio;
         }
-        [self resizeWithSize:CGSizeMake(newSize.width * scale, newSize.height * scale)];
+        [self updateConstraintsForSize:newSize center:center];
     } else if (self.type == JotMovableViewContainerTypeText) {
         CGFloat fontSize = self.originalFontSize * scale;
         self.textLabel.font = [self.textLabel.font fontWithSize:fontSize];
         [self.textLabel sizeToFit];
-        [self resizeWithSize:self.textLabel.frame.size];
+        [self updateConstraintsForSize:self.textLabel.frame.size center:center];
     }
 }
 
-- (void) moveViewToCenter:(CGPoint)center {
-    [self updateConstraintsForSize:self.frame.size center:center];
+- (void) resizeWithSize:(CGSize)size moveToCenter:(CGPoint)center {
+    [self updateConstraintsForSize:size center:center];
 }
 
 - (void)setTransform:(CGAffineTransform)transform {
