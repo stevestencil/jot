@@ -156,7 +156,7 @@
         self.pinchRecognizer.enabled =
         self.rotationRecognizer.enabled = (state == JotViewStateText) || (state == JotViewStateImage);
         
-        if (state != JotViewStateImage || state != JotViewStateText) {
+        if (state != JotViewStateImage && state != JotViewStateText) {
             [self.movableView cancelEditing];
         }
         

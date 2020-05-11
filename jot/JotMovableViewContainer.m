@@ -147,7 +147,7 @@
     return nil;
 }
 
-- (JotMovableView *)handlePanGesture:(UIPanGestureRecognizer *)recognizer {
+- (JotMovableView*) handleMoveGesture:(UIGestureRecognizer*)recognizer withOffset:(CGPoint)offset {
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
@@ -156,8 +156,8 @@
                 return nil;
             }
             [self captureUndoSnapshot];
-            self.referenceOffset = CGPointMake(self.movingView.center.x - point.x,
-                                               self.movingView.center.y - point.y);
+            self.referenceOffset = CGPointMake(self.movingView.center.x - point.x + offset.x,
+                                               self.movingView.center.y - point.y + offset.y);
             CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
                                             point.y + self.referenceOffset.y);
             [self.movingView moveViewToCenter:newCenter];
@@ -186,8 +186,12 @@
     return self.movingView;
 }
 
+- (JotMovableView *)handlePanGesture:(UIPanGestureRecognizer *)recognizer {
+    return [self handleMoveGesture:recognizer withOffset:CGPointZero];
+}
+
 - (JotMovableView *)handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer {
-    return [self handlePanGesture:(UIPanGestureRecognizer*)recognizer];
+    return [self handleMoveGesture:recognizer withOffset:CGPointMake(5.0, -5.0)];
 }
 
 - (void) handlePinchGesture:(UIPinchGestureRecognizer*)recognizer {
