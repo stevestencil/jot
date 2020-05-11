@@ -34,5 +34,6 @@ typedef enum {
 - (void) enableEditing:(BOOL)editing;
 
 - (NSAttributedString*) attributedString;
+- (void) setFontColor:(UIColor*)color;
 
 @end

@@ -19,6 +19,7 @@
 @property (nonatomic, strong) UIPinchGestureRecognizer *activePinchRecognizer;
 @property (nonatomic, strong) UIRotationGestureRecognizer *activeRotationRecognizer;
 @property (nonatomic, strong) NSMutableArray<JotMovableView*> *viewsLastEdited;
+@property (nonatomic, strong) UIColor *fontColor;
 
 @end
 
@@ -32,6 +33,7 @@
         self.referenceOffset = CGPointZero;
         _referenceRotateTransform = CGAffineTransformIdentity;
         _currentRotateTransform = CGAffineTransformIdentity;
+        _fontColor = [UIColor blackColor];
     }
     return self;
 }
@@ -113,6 +115,7 @@
 
 - (void) addTextViewWithText:(NSString*)text {
     JotMovableView *containerView = [JotMovableView movableViewWithText:text];
+    [containerView setFontColor:self.fontColor];
     [self addSubview:containerView];
     [containerView resizeWithScale:1.0];
     [self.movableViews addObject:containerView];
@@ -342,6 +345,11 @@
         _viewsLastEdited = [NSMutableArray new];
     }
     return _viewsLastEdited;
+}
+
+- (void)setFontColor:(UIColor *)fontColor {
+    _fontColor = fontColor;
+    [self.movingView setFontColor:fontColor];
 }
 
 @end

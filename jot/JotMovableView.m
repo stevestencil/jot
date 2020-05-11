@@ -8,7 +8,7 @@
 #import "JotMovableView.h"
 #import "Masonry.h"
 
-@interface JotMovableView ()
+@interface JotMovableView () <UITextFieldDelegate>
 
 @property (nonatomic) CGFloat aspectRatio;
 @property (strong, nonatomic) NSMutableArray<NSDictionary*> *editHistory;
@@ -17,6 +17,8 @@
 // font size relative to width of superview
 @property (nonatomic) CGFloat originalFontSizeRatio;
 @property (nonatomic) CGFloat currentFontSizeRatio;
+@property (strong, nonatomic) NSDictionary *lastState;
+@property (nonatomic) BOOL isEditing;
 
 @end
 
@@ -47,15 +49,6 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
-- (void) deviceRotated {
-    if (self.type == JotMovableViewContainerTypeText) {
-        CGFloat fontSize = self.superview.frame.size.width * self.currentFontSizeRatio;
-        self.textLabel.font = [self.textLabel.font fontWithSize:fontSize];
-        [self.textLabel sizeToFit];
-        [self updateConstraintsForSize:self.textLabel.frame.size center:self.center];
-    }
-}
-
 - (void) addImageViewWithImage:(UIImage*)image {
     UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
     [self addSubview:imageView];
@@ -72,10 +65,12 @@
 
 - (void) addTextLabelWithText:(NSString*)text {
     UITextField *label = [[UITextField alloc] init];
+    label.returnKeyType = UIReturnKeyDone;
     label.font = [label.font fontWithSize:50.0];
     label.userInteractionEnabled = NO;
     label.text = text;
     [label sizeToFit];
+    label.delegate = self;
     [self addSubview:label];
     _textLabel = label;
     _type = JotMovableViewContainerTypeText;
@@ -86,12 +81,6 @@
     }];
 }
 
-- (void)didMoveToSuperview {
-    [super didMoveToSuperview];
-    self.center = self.superview.center;
-    self.originalFontSizeRatio = self.textLabel.font.pointSize / self.superview.frame.size.width;
-    self.currentFontSizeRatio = self.originalFontSizeRatio;
-}
 
 - (void) updateConstraintsForSize:(CGSize)size center:(CGPoint)center {
     [self mas_remakeConstraints:^(MASConstraintMaker *make) {
@@ -119,15 +108,47 @@
     return self.textLabel.attributedText;
 }
 
+#pragma mark - Layout
+
+- (void) deviceRotated {
+    if (self.type == JotMovableViewContainerTypeText) {
+        CGFloat fontSize = self.superview.frame.size.width * self.currentFontSizeRatio;
+        self.textLabel.font = [self.textLabel.font fontWithSize:fontSize];
+        [self.textLabel sizeToFit];
+        [self updateConstraintsForSize:self.textLabel.frame.size center:self.center];
+    }
+}
+
+- (void)didMoveToSuperview {
+    [super didMoveToSuperview];
+    self.center = self.superview.center;
+    self.originalFontSizeRatio = self.textLabel.font.pointSize / self.superview.frame.size.width;
+    self.currentFontSizeRatio = self.originalFontSizeRatio;
+}
+
 #pragma mark - Undo
 
-- (void) captureUndoObject {
-    NSDictionary *object = @{
+- (NSDictionary*) currentState {
+    return @{
         @"size": [NSValue valueWithCGSize:self.frame.size],
         @"center": [NSValue valueWithCGPoint:self.center],
         @"transform": [NSValue valueWithCGAffineTransform:self.transform]
     };
-    [self.editHistory addObject:object];
+}
+
+- (void) captureUndoObject {
+    NSDictionary *currentState = [self currentState];
+    [self.editHistory addObject:currentState];
+}
+
+- (void) restorePositionFromState:(NSDictionary*)state {
+    if (state) {
+        CGSize size = [state[@"size"] CGSizeValue];
+        CGPoint center = [state[@"center"] CGPointValue];
+        [self updateConstraintsForSize:size center:center];
+        CGAffineTransform transform = [state[@"transform"] CGAffineTransformValue];
+        self.transform = transform;
+    }
 }
 
 - (instancetype) undo {
@@ -136,11 +157,7 @@
         [self removeFromSuperview];
         return nil;
     }
-    CGSize size = [lastCapture[@"size"] CGSizeValue];
-    CGPoint center = [lastCapture[@"center"] CGPointValue];
-    CGAffineTransform transform = [lastCapture[@"transform"] CGAffineTransformValue];
-    [self updateConstraintsForSize:size center:center];
-    self.transform = transform;
+    [self restorePositionFromState:lastCapture];
     [self.editHistory removeLastObject];
     return self;
 }
@@ -202,6 +219,22 @@
     return self.imageView ? self.imageView.transform : self.textLabel.transform;
 }
 
+#pragma mark - UITextFieldDelegate
+
+- (void)textFieldDidBeginEditing:(UITextField *)textField {
+    self.isEditing = YES;
+}
+
+- (void)textFieldDidEndEditing:(UITextField *)textField {
+    self.isEditing = NO;
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    [textField resignFirstResponder];
+    self.isEditing = NO;
+    return YES;
+}
+
 #pragma mark - Setters & Getters
 
 - (void) setSelected:(BOOL)selected {
@@ -222,6 +255,32 @@
 
 - (UIImage *)image {
     return self.imageView.image;
+}
+
+- (void)setFontColor:(UIColor *)color {
+    self.textLabel.textColor = color;
+}
+
+- (void)setIsEditing:(BOOL)isEditing {
+    if (_isEditing != isEditing) {
+        _isEditing = isEditing;
+        [self.superview layoutIfNeeded];
+        [UIView animateWithDuration:0.5f animations:^{
+            if (isEditing) {
+                self.lastState = [self currentState];
+                [self mas_remakeConstraints:^(MASConstraintMaker *make) {
+                    make.top.equalTo(self.superview.mas_top);
+                    make.leading.equalTo(self.superview.mas_leading);
+                    make.trailing.equalTo(self.superview.mas_trailing);
+                }];
+                self.transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(0));
+            } else {
+                [self restorePositionFromState:self.lastState];
+                self.lastState = nil;
+            }
+            [self.superview layoutIfNeeded];
+        }];
+    }
 }
 
 @end

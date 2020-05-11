@@ -264,6 +264,7 @@
     if (_drawingColor != drawingColor) {
         _drawingColor = drawingColor;
         self.drawView.strokeColor = drawingColor;
+        [self.movableView setFontColor:drawingColor];
     }
 }
 
@@ -329,6 +330,8 @@
 - (BOOL)photosAdded {
     return self.movableView.viewCount > 0;
 }
+
+#pragma mark - Grid
 
 - (void)setGridSize:(CGFloat)gridSize {
     self.gridView.gridSize = gridSize;
