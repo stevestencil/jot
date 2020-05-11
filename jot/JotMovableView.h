@@ -31,7 +31,7 @@ typedef enum {
 - (void) resizeWithSize:(CGSize)size moveToCenter:(CGPoint)center;
 - (void) captureUndoObject;
 - (instancetype) undo;
-- (void) enableEditing:(BOOL)editing;
+- (void)setIsEditing:(BOOL)isEditing;
 
 - (NSAttributedString*) attributedString;
 - (void) setFontColor:(UIColor*)color;

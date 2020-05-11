@@ -8,6 +8,8 @@
 #import "JotMovableView.h"
 #import "Masonry.h"
 
+static CGFloat const kEditAnimationDuration = 0.5f;
+
 @interface JotMovableView () <UITextFieldDelegate>
 
 @property (nonatomic) CGFloat aspectRatio;
@@ -92,16 +94,6 @@
         make.centerX.equalTo(self.superview.mas_right).multipliedBy(center.x / CGRectGetWidth(self.superview.frame));
         make.centerY.equalTo(self.superview.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.superview.frame));
     }];
-}
-
-- (void)enableEditing:(BOOL)editing {
-    if (editing) {
-        self.textLabel.userInteractionEnabled = YES;
-        [self.textLabel becomeFirstResponder];
-    } else {
-        self.textLabel.userInteractionEnabled = NO;
-        [self.textLabel resignFirstResponder];
-    }
 }
 
 - (NSAttributedString *)attributedString {
@@ -265,7 +257,7 @@
     if (_isEditing != isEditing) {
         _isEditing = isEditing;
         [self.superview layoutIfNeeded];
-        [UIView animateWithDuration:0.5f animations:^{
+        [UIView animateWithDuration:kEditAnimationDuration animations:^{
             if (isEditing) {
                 self.lastState = [self currentState];
                 [self mas_remakeConstraints:^(MASConstraintMaker *make) {
@@ -274,11 +266,20 @@
                     make.trailing.equalTo(self.superview.mas_trailing);
                 }];
                 self.transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(0));
+
             } else {
                 [self restorePositionFromState:self.lastState];
                 self.lastState = nil;
             }
             [self.superview layoutIfNeeded];
+        } completion:^(BOOL finished) {
+            self.textLabel.userInteractionEnabled = isEditing;
+            if (isEditing) {
+                [self.textLabel becomeFirstResponder];
+                [self.textLabel selectAll:nil];
+            } else {
+                [self.textLabel resignFirstResponder];
+            }
         }];
     }
 }

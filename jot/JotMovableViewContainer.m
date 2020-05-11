@@ -139,12 +139,12 @@
 
 - (JotMovableView*)handleTapGesture:(UITapGestureRecognizer *)recognizer {
     for (JotMovableView *view in self.movableViews) {
-        [view enableEditing:NO];
+        [view setIsEditing:NO];
     }
     CGPoint point = [recognizer locationInView:self];
     JotMovableView *view = [self imageViewAtPoint:point];
     if (view.type == JotMovableViewContainerTypeText) {
-        [view enableEditing:YES];
+        [view setIsEditing:YES];
         return view;
     }
     return nil;
