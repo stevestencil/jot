@@ -8,7 +8,7 @@
 #import "JotMovableViewContainer.h"
 #import "Masonry.h"
 
-@interface JotMovableViewContainer ()
+@interface JotMovableViewContainer () <JotMovableViewDelegate>
 
 @property (nonatomic, strong) NSMutableArray<JotMovableView*> *movableViews;
 @property (nonatomic, weak) JotMovableView *movingView;
@@ -66,7 +66,9 @@
 
 - (void) undo {
     JotMovableView *lastEdited = [self.viewsLastEdited lastObject];
-    if (![lastEdited undo]) {
+    if ([lastEdited undo]) {
+        self.movingView = lastEdited;
+    } else {
         [self.movableViews removeObject:lastEdited];
     }
     [self.viewsLastEdited removeLastObject];
@@ -115,6 +117,7 @@
 
 - (void) addTextViewWithText:(NSString*)text {
     JotMovableView *containerView = [JotMovableView movableViewWithText:text];
+    containerView.delegate = self;
     [containerView setFontColor:self.fontColor];
     [self addSubview:containerView];
     [containerView resizeWithScale:1.0];
@@ -139,12 +142,14 @@
 
 - (JotMovableView*)handleTapGesture:(UITapGestureRecognizer *)recognizer {
     for (JotMovableView *view in self.movableViews) {
-        [view setIsEditing:NO];
+        view.isEditing = NO;
     }
     CGPoint point = [recognizer locationInView:self];
     JotMovableView *view = [self imageViewAtPoint:point];
     if (view.type == JotMovableViewContainerTypeText) {
-        [view setIsEditing:YES];
+        self.movingView = view;
+        [self captureUndoSnapshot];
+        view.isEditing = YES;
         return view;
     }
     return nil;
@@ -155,7 +160,7 @@
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
             self.movingView = [self imageViewAtPoint:point] ? : self.movingView;
-            if (!self.movingView) {
+            if (!self.movingView || self.movingView.isEditing) {
                 return nil;
             }
             [self captureUndoSnapshot];
@@ -168,7 +173,7 @@
         }
             
         case UIGestureRecognizerStateChanged: {
-            if (!self.movingView) {
+            if (!self.movingView || self.movingView.isEditing) {
                 return nil;
             }
             CGPoint point = [recognizer locationInView:self];
@@ -202,7 +207,7 @@
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
             self.movingView = [self imageViewAtPoint:point] ? : self.movingView;
-            if (!self.movingView) {
+            if (!self.movingView || self.movingView.isEditing) {
                 return;
             }
             self.referenceOffset = CGPointMake(self.movingView.center.x - point.x,
@@ -218,7 +223,7 @@
         }
             
         case UIGestureRecognizerStateChanged: {
-            if (!self.movingView) {
+            if (!self.movingView || self.movingView.isEditing) {
                 return;
             }
             CGPoint point = [recognizer locationInView:self];
@@ -245,7 +250,7 @@
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
             self.movingView = [self imageViewAtPoint:point] ? : self.movingView;
-            if (!self.movingView) {
+            if (!self.movingView || self.movingView.isEditing) {
                 return;
             }
             self.referenceOffset = CGPointMake(self.movingView.center.x - point.x,
@@ -257,7 +262,7 @@
         }
             
         case UIGestureRecognizerStateChanged: {
-            if (!self.movingView) {
+            if (!self.movingView || self.movingView.isEditing) {
                 return;
             }
             CGPoint point = [recognizer locationInView:self];
@@ -319,6 +324,17 @@
     UIImage *finalImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     return finalImage;
+}
+
+#pragma mark - JotMovableViewDelegate
+
+- (void)jotMovableView:(JotMovableView *)view didBeginUpdateText:(NSString *)text {
+    self.movingView = view;
+    [self captureUndoSnapshot];
+}
+
+- (void)jotMovableView:(JotMovableView *)view didEndUpdateText:(NSString *)text {
+
 }
 
 #pragma mark - Setters & Getters

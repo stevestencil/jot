@@ -301,7 +301,7 @@
 - (void) undo {
     id lastView = [self.viewsInEditOrder lastObject];
     [self.viewsInEditOrder removeLastObject];
-    if ([lastView isKindOfClass:[JotMovableView class]]) {
+    if ([lastView isKindOfClass:[JotMovableViewContainer class]]) {
         [(JotMovableView*)lastView undo];
     } else if ([lastView isKindOfClass:[JotDrawView class]]) {
         [(JotMovableView*)lastView undo];
@@ -317,6 +317,8 @@
 - (void)clearImages {
     [self.movableView clearAll];
 }
+
+#pragma mark - Movable Views
 
 - (void)addBackgroundImage:(UIImage *)image {
     [self.movableView addImageView:image];

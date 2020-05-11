@@ -8,7 +8,7 @@
 #import "JotMovableView.h"
 #import "Masonry.h"
 
-static CGFloat const kEditAnimationDuration = 0.5f;
+static CGFloat const kEditAnimationDuration = 0.3f;
 
 @interface JotMovableView () <UITextFieldDelegate>
 
@@ -20,7 +20,6 @@ static CGFloat const kEditAnimationDuration = 0.5f;
 @property (nonatomic) CGFloat originalFontSizeRatio;
 @property (nonatomic) CGFloat currentFontSizeRatio;
 @property (strong, nonatomic) NSDictionary *lastState;
-@property (nonatomic) BOOL isEditing;
 
 @end
 
@@ -83,19 +82,6 @@ static CGFloat const kEditAnimationDuration = 0.5f;
     }];
 }
 
-
-- (void) updateConstraintsForSize:(CGSize)size center:(CGPoint)center {
-    [self mas_remakeConstraints:^(MASConstraintMaker *make) {
-        if (self.type == JotMovableViewContainerTypeImage) {
-            CGFloat widthPercentage = MAX(0.15f, floorf((size.width / CGRectGetWidth(self.superview.frame)) * 100) / 100);
-            make.width.equalTo(self.superview.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
-            make.height.equalTo(self.mas_width).dividedBy(self.aspectRatio);
-        }
-        make.centerX.equalTo(self.superview.mas_right).multipliedBy(center.x / CGRectGetWidth(self.superview.frame));
-        make.centerY.equalTo(self.superview.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.superview.frame));
-    }];
-}
-
 - (NSAttributedString *)attributedString {
     return self.textLabel.attributedText;
 }
@@ -124,7 +110,8 @@ static CGFloat const kEditAnimationDuration = 0.5f;
     return @{
         @"size": [NSValue valueWithCGSize:self.frame.size],
         @"center": [NSValue valueWithCGPoint:self.center],
-        @"transform": [NSValue valueWithCGAffineTransform:self.transform]
+        @"transform": [NSValue valueWithCGAffineTransform:self.transform],
+        @"text": self.textLabel.text ? : @""
     };
 }
 
@@ -140,6 +127,7 @@ static CGFloat const kEditAnimationDuration = 0.5f;
         [self updateConstraintsForSize:size center:center];
         CGAffineTransform transform = [state[@"transform"] CGAffineTransformValue];
         self.transform = transform;
+        self.textLabel.text = state[@"text"];
     }
 }
 
@@ -156,16 +144,16 @@ static CGFloat const kEditAnimationDuration = 0.5f;
 
 #pragma mark - Moving, Resizing and Rotation
 
-- (void) resizeWithSize:(CGSize)size {
-    [self updateConstraintsForSize:size center:self.center];
-}
-
-- (void)resizeWithScale:(CGFloat)scale {
-    [self resizeWithScale:scale moveToCenter:self.center];
-}
-
-- (void) moveViewToCenter:(CGPoint)center {
-    [self updateConstraintsForSize:self.frame.size center:center];
+- (void) updateConstraintsForSize:(CGSize)size center:(CGPoint)center {
+    [self mas_remakeConstraints:^(MASConstraintMaker *make) {
+        if (self.type == JotMovableViewContainerTypeImage) {
+            CGFloat widthPercentage = MAX(0.15f, floorf((size.width / CGRectGetWidth(self.superview.frame)) * 100) / 100);
+            make.width.equalTo(self.superview.mas_width).multipliedBy(MAX(0.15f, widthPercentage));
+            make.height.equalTo(self.mas_width).dividedBy(self.aspectRatio);
+        }
+        make.centerX.equalTo(self.superview.mas_right).multipliedBy(center.x / CGRectGetWidth(self.superview.frame));
+        make.centerY.equalTo(self.superview.mas_bottom).multipliedBy(center.y / CGRectGetHeight(self.superview.frame));
+    }];
 }
 
 - (void) resizeWithScale:(CGFloat)scale moveToCenter:(CGPoint)center {
@@ -184,6 +172,18 @@ static CGFloat const kEditAnimationDuration = 0.5f;
         [self.textLabel sizeToFit];
         [self updateConstraintsForSize:self.textLabel.frame.size center:center];
     }
+}
+
+- (void) resizeWithSize:(CGSize)size {
+    [self updateConstraintsForSize:size center:self.center];
+}
+
+- (void)resizeWithScale:(CGFloat)scale {
+    [self resizeWithScale:scale moveToCenter:self.center];
+}
+
+- (void) moveViewToCenter:(CGPoint)center {
+    [self updateConstraintsForSize:self.frame.size center:center];
 }
 
 - (void) resizeWithSize:(CGSize)size moveToCenter:(CGPoint)center {
@@ -214,16 +214,43 @@ static CGFloat const kEditAnimationDuration = 0.5f;
 #pragma mark - UITextFieldDelegate
 
 - (void)textFieldDidBeginEditing:(UITextField *)textField {
-    self.isEditing = YES;
+    self.lastState = [self currentState];
+    [self.superview layoutIfNeeded];
+    _isEditing = YES;
+    if ([self.delegate respondsToSelector:@selector(jotMovableView:didBeginUpdateText:)]) {
+        [self.delegate jotMovableView:self didBeginUpdateText:self.textLabel.text];
+    }
+    [UIView animateWithDuration:kEditAnimationDuration animations:^{
+        [self mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.top.equalTo(self.superview.mas_top);
+            make.leading.equalTo(self.superview.mas_leading);
+            make.trailing.equalTo(self.superview.mas_trailing);
+        }];
+        self.transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(0));
+        [self.superview layoutIfNeeded];
+    } completion:^(BOOL finished) {
+        [self.textLabel selectAll:nil];
+    }];
 }
 
 - (void)textFieldDidEndEditing:(UITextField *)textField {
-    self.isEditing = NO;
+    _isEditing = NO;
+    [self.superview layoutIfNeeded];
+    [UIView animateWithDuration:kEditAnimationDuration animations:^{
+        NSMutableDictionary *state = [self.lastState mutableCopy];
+        state[@"text"] = self.textLabel.text ? : @"";
+        [self restorePositionFromState:state];
+        self.lastState = nil;
+        [self.superview layoutIfNeeded];
+    } completion:^(BOOL finished) {
+        if ([self.delegate respondsToSelector:@selector(jotMovableView:didEndUpdateText:)]) {
+            [self.delegate jotMovableView:self didEndUpdateText:self.textLabel.text];
+        }
+    }];
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
     [textField resignFirstResponder];
-    self.isEditing = NO;
     return YES;
 }
 
@@ -254,33 +281,13 @@ static CGFloat const kEditAnimationDuration = 0.5f;
 }
 
 - (void)setIsEditing:(BOOL)isEditing {
-    if (_isEditing != isEditing) {
-        _isEditing = isEditing;
-        [self.superview layoutIfNeeded];
-        [UIView animateWithDuration:kEditAnimationDuration animations:^{
-            if (isEditing) {
-                self.lastState = [self currentState];
-                [self mas_remakeConstraints:^(MASConstraintMaker *make) {
-                    make.top.equalTo(self.superview.mas_top);
-                    make.leading.equalTo(self.superview.mas_leading);
-                    make.trailing.equalTo(self.superview.mas_trailing);
-                }];
-                self.transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(0));
-
-            } else {
-                [self restorePositionFromState:self.lastState];
-                self.lastState = nil;
-            }
-            [self.superview layoutIfNeeded];
-        } completion:^(BOOL finished) {
-            self.textLabel.userInteractionEnabled = isEditing;
-            if (isEditing) {
-                [self.textLabel becomeFirstResponder];
-                [self.textLabel selectAll:nil];
-            } else {
-                [self.textLabel resignFirstResponder];
-            }
-        }];
+    _isEditing = isEditing;
+    if (isEditing) {
+        self.textLabel.userInteractionEnabled = YES;
+        [self.textLabel becomeFirstResponder];
+    } else {
+        [self.textLabel resignFirstResponder];
+        self.textLabel.userInteractionEnabled = NO;
     }
 }
 

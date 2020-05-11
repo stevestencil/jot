@@ -15,13 +15,25 @@ typedef enum {
     JotMovableViewContainerTypeText
 } JotMovableViewContainerType;
 
+@class JotMovableView;
+
+@protocol JotMovableViewDelegate <NSObject>
+
+@optional
+- (void) jotMovableView:(JotMovableView*)view didBeginUpdateText:(NSString*)text;
+- (void) jotMovableView:(JotMovableView*)view didEndUpdateText:(NSString*)text;
+
+@end
+
 @interface JotMovableView : UIView
 
 + (instancetype) movableViewWithImage:(UIImage*)image;
 + (instancetype) movableViewWithText:(NSString*)text;
 
+@property (nonatomic, strong) id <JotMovableViewDelegate> delegate;
 @property (nonatomic, readonly) JotMovableViewContainerType type;
-@property (nonatomic, readonly) UIImage *image;
+@property (nonatomic, strong, readonly) UIImage *image;
+@property (nonatomic) BOOL isEditing;
 
 - (void) setSelected:(BOOL)selected;
 - (void) resizeWithSize:(CGSize)size;
@@ -31,7 +43,6 @@ typedef enum {
 - (void) resizeWithSize:(CGSize)size moveToCenter:(CGPoint)center;
 - (void) captureUndoObject;
 - (instancetype) undo;
-- (void)setIsEditing:(BOOL)isEditing;
 
 - (NSAttributedString*) attributedString;
 - (void) setFontColor:(UIColor*)color;
