@@ -262,6 +262,13 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     self.bezierPath = nil;
     self.lastVelocity = self.initialVelocity;
     self.lastWidth = self.strokeWidth;
+    if (self.pointsArray.count == 1 && [[self.pointsArray lastObject] isKindOfClass:[JotTouchPoint class]]) {
+        JotTouchPoint *touchPoint = [self.pointsArray lastObject];
+        touchPoint.strokeWidth = self.strokeWidth;
+        touchPoint.strokeColor = self.strokeColor;
+        [self.pathsArray addObject:touchPoint];
+        [self setNeedsDisplay];
+    }
     [self.pathsCounts addObject:@(self.pathsArray.count)];
 }
 

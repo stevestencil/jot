@@ -235,6 +235,7 @@ static CGFloat const kEditAnimationDuration = 0.3f;
 
 - (void)textFieldDidEndEditing:(UITextField *)textField {
     _isEditing = NO;
+    self.textLabel.userInteractionEnabled = NO;
     [self.superview layoutIfNeeded];
     [UIView animateWithDuration:kEditAnimationDuration animations:^{
         NSMutableDictionary *state = [self.lastState mutableCopy];
@@ -287,7 +288,6 @@ static CGFloat const kEditAnimationDuration = 0.3f;
         [self.textLabel becomeFirstResponder];
     } else {
         [self.textLabel resignFirstResponder];
-        self.textLabel.userInteractionEnabled = NO;
     }
 }
 
