@@ -402,9 +402,12 @@
 - (UIImage *)renderImageWithSize:(CGSize)size
 {
     [self.movableView cancelEditing];
-    UIImage *renderDrawingImage = [self.drawView renderDrawingWithSize:size];
-    return renderDrawingImage;
-//    return [self.textView drawTextOnImage:renderDrawingImage];
+    if (self.gridView.hidden) {
+        return [self.drawView renderDrawingWithSize:size];
+    } else {
+        UIImage *gridImage = [self.gridView drawImage];
+        return  [self.drawView drawOnImage:gridImage];
+    }
 }
 
 - (UIImage *)renderImageWithSize:(CGSize)size onColor:(UIColor *)color
