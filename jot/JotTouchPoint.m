@@ -10,28 +10,30 @@
 
 @implementation JotTouchPoint
 
-+ (instancetype)withPoint:(CGPoint)point
++ (instancetype)withPoint:(CGPoint)point inFrame:(CGRect)frame
 {
     JotTouchPoint *touchPoint = [JotTouchPoint new];
-    touchPoint.point = point;
+    touchPoint.pointPercent = CGPointMake(point.x / CGRectGetWidth(frame), point.y / CGRectGetHeight(frame));
     touchPoint.timestamp = [NSDate date];
     return touchPoint;
 }
 
-- (CGFloat)velocityFromPoint:(JotTouchPoint *)fromPoint
+- (CGFloat)velocityFromPoint:(JotTouchPoint *)fromPoint inFrame:(CGRect)frame
 {
-    CGFloat distance = (CGFloat)sqrt((double)(pow((double)(self.point.x - fromPoint.point.x),
+    CGPoint translatedPoint = [self CGPointValueInFrame:frame];
+    CGPoint translatedFromPoint = CGPointMake(fromPoint.pointPercent.x * CGRectGetWidth(frame), fromPoint.pointPercent.y * CGRectGetHeight(frame));
+    CGFloat distance = (CGFloat)sqrt((double)(pow((double)(translatedPoint.x - translatedFromPoint.x),
                                                   (double)2.f)
-                                              + pow((double)(self.point.y - fromPoint.point.y),
+                                              + pow((double)(translatedPoint.y - translatedFromPoint.y),
                                                     (double)2.f)));
     
     CGFloat timeInterval = (CGFloat)fabs((double)([self.timestamp timeIntervalSinceDate:fromPoint.timestamp]));
     return distance / timeInterval;
 }
 
-- (CGPoint)CGPointValue
+- (CGPoint)CGPointValueInFrame:(CGRect)frame
 {
-    return self.point;
+    return CGPointMake(self.pointPercent.x * CGRectGetWidth(frame), self.pointPercent.y * CGRectGetHeight(frame));
 }
 
 @end

@@ -191,7 +191,8 @@ typedef NS_ENUM(NSUInteger, JotViewState){
 
 - (void)clearImages;
 
-- (void)addBackgroundImage:(UIImage*)image;
+- (void) setBackgroundImage:(UIImage*)image;
+- (void)addMovableImage:(UIImage*)image;
 
 - (void)addTextViewWithText:(NSString*)text;
 
@@ -203,7 +204,7 @@ typedef NS_ENUM(NSUInteger, JotViewState){
  *
  *  @return An image of the rendered drawing and text on the background image.
  */
-- (UIImage *)drawOnImage:(UIImage *)image;
+//- (UIImage *)drawOnImage:(UIImage *)image;
 
 /**
  *  Renders the drawing and text at the view's size with a transparent background.
@@ -217,7 +218,7 @@ typedef NS_ENUM(NSUInteger, JotViewState){
  *
  *  @return An image of the rendered drawing and text on a colored background.
  */
-- (UIImage *)renderImageOnColor:(UIColor *)color;
+//- (UIImage *)renderImageOnColor:(UIColor *)color;
 
 /**
  *  Renders the drawing and text at the view's size multiplied by the given scale
@@ -225,7 +226,7 @@ typedef NS_ENUM(NSUInteger, JotViewState){
  *
  *  @return An image of the rendered drawing and text.
  */
-- (UIImage *)renderImageWithScale:(CGFloat)scale;
+//- (UIImage *)renderImageWithScale:(CGFloat)scale;
 
 /**
  *  Renders the drawing and text at the view's size multiplied by the given scale
@@ -233,7 +234,7 @@ typedef NS_ENUM(NSUInteger, JotViewState){
  *
  *  @return An image of the rendered drawing and text on a colored background.
  */
-- (UIImage *)renderImageWithScale:(CGFloat)scale onColor:(UIColor *)color;
+//- (UIImage *)renderImageWithScale:(CGFloat)scale onColor:(UIColor *)color;
 
 @end
 

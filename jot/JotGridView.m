@@ -43,9 +43,10 @@
     [self.gridPath stroke];
 }
 
-- (UIImage *)drawImage
+- (UIImage *)drawImageForSize:(CGSize)size
 {
-    UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, 1.0f);
+    CGFloat scale = size.width / CGRectGetWidth(self.bounds);
+    UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, scale);
     [self.gridColor setStroke];
     [self.gridPath stroke];
     UIImage *pathsImage = UIGraphicsGetImageFromCurrentImageContext();

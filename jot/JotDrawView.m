@@ -18,10 +18,11 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 
 @interface JotDrawView ()
 
+@property (nonatomic, assign) CGRect originalFrame;
 @property (nonatomic, strong) NSMutableArray *pathsArray;
 @property (nonatomic, strong) NSMutableArray<NSNumber*> *pathsCounts;
 @property (nonatomic, strong) JotTouchBezier *bezierPath;
-@property (nonatomic, strong) NSMutableArray *pointsArray;
+@property (nonatomic, strong) NSMutableArray<JotTouchPoint*> *pointsArray;
 @property (nonatomic, assign) NSUInteger pointsCounter;
 @property (nonatomic, assign) CGFloat lastVelocity;
 @property (nonatomic, assign) CGFloat lastWidth;
@@ -55,6 +56,11 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     }
     
     return self;
+}
+
+- (void)didMoveToSuperview {
+    [super didMoveToSuperview];
+    self.originalFrame = self.frame;
 }
 
 #pragma mark - Undo
@@ -120,6 +126,14 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     return sqrt(xDist * xDist + yDist * yDist);
 }
 
+- (CGPoint) translatePointPercentageForPoint:(CGPoint)point {
+    return CGPointMake(point.x * CGRectGetWidth(self.frame), point.y * CGRectGetHeight(self.frame));
+}
+
+- (CGPoint) convertPointToPercentageOfView:(CGPoint)point {
+    return CGPointMake(point.x / CGRectGetWidth(self.frame), point.y / CGRectGetHeight(self.frame));
+}
+
 - (void)drawTouchBeganAtPoint:(CGPoint)touchPoint
 {
     self.lastVelocity = self.initialVelocity;
@@ -127,48 +141,52 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     
     if (self.mode == JotDrawViewModeStraightLines) {
         self.bezierPath = nil;
-        CGPoint snappedPoint = touchPoint;
+        CGPoint snappedPoint = CGPointMake(touchPoint.x / CGRectGetWidth(self.frame), touchPoint.y / CGRectGetHeight(self.frame));
         for (id path in self.pathsArray) {
             if ([path isKindOfClass:[JotTouchPoint class]]) {
                 JotTouchPoint *point = (JotTouchPoint*)path;
-                if ([self isPoint:touchPoint closeToPoint:point.point]) {
-                    snappedPoint = point.point;
+                CGPoint translatedPoint = [self translatePointPercentageForPoint:point.pointPercent];
+                if ([self isPoint:touchPoint closeToPoint:translatedPoint]) {
+                    snappedPoint = point.pointPercent;
                 }
             } else if ([path isKindOfClass:[JotTouchBezier class]]) {
                 JotTouchBezier *touchPath = (JotTouchBezier*)path;
-                if ([self isPoint:touchPoint closeToPoint:touchPath.startPoint]) {
-                    snappedPoint = touchPath.startPoint;
+                CGPoint translatedStartPoint = [self translatePointPercentageForPoint:touchPath.startPointPercent];
+                CGPoint translatedEndPoint = [self translatePointPercentageForPoint:touchPath.endPointPercent];
+                if ([self isPoint:touchPoint closeToPoint:translatedStartPoint]) {
+                    snappedPoint = touchPath.startPointPercent;
                     break;
-                } else if ([self isPoint:touchPoint closeToPoint:touchPath.endPoint]) {
-                    snappedPoint = touchPath.endPoint;
+                } else if ([self isPoint:touchPoint closeToPoint:translatedEndPoint]) {
+                    snappedPoint = touchPath.endPointPercent;
                     break;
                 }
             }
 
         }
-        self.bezierPath.startPoint = snappedPoint;
-        self.bezierPath.endPoint = snappedPoint;
-        self.bezierPath.startWidth = self.strokeWidth;
-        self.bezierPath.endWidth = self.strokeWidth;
+        self.bezierPath.startPointPercent = snappedPoint;
+        self.bezierPath.endPointPercent = snappedPoint;
+        self.bezierPath.startWidthPercent = self.strokeWidth / CGRectGetWidth(self.frame);
+        self.bezierPath.endWidthPercent = self.strokeWidth / CGRectGetWidth(self.frame);
         self.bezierPath.straightLine = YES;
         return;
     }
 
     self.pointsCounter = 0;
     [self.pointsArray removeAllObjects];
-    [self.pointsArray addObject:[JotTouchPoint withPoint:touchPoint]];
+    [self.pointsArray addObject:[JotTouchPoint withPoint:touchPoint inFrame:self.frame]];
 }
 
 - (void)drawTouchMovedToPoint:(CGPoint)touchPoint
 {
     if (self.mode == JotDrawViewModeStraightLines) {
-        CGPoint snappedPoint = touchPoint;
-        if ([self isAxis:touchPoint.x closeToAxis:self.bezierPath.startPoint.x]) {
-            snappedPoint.x = self.bezierPath.startPoint.x;
+        CGPoint snappedPoint = [self convertPointToPercentageOfView:touchPoint];
+        CGPoint convertedStartPoint = [self translatePointPercentageForPoint:self.bezierPath.startPointPercent];
+        if ([self isAxis:touchPoint.x closeToAxis:convertedStartPoint.x]) {
+            snappedPoint.x = self.bezierPath.startPointPercent.x;
         }
         // if x has been snapped, do not snap y
-        if (snappedPoint.x != self.bezierPath.startPoint.x && [self isAxis:touchPoint.y closeToAxis:self.bezierPath.startPoint.y]) {
-            snappedPoint.y = self.bezierPath.startPoint.y;
+        if (snappedPoint.x != self.bezierPath.startPointPercent.x && [self isAxis:touchPoint.y closeToAxis:convertedStartPoint.y]) {
+            snappedPoint.y = self.bezierPath.startPointPercent.y;
         }
         CGFloat oldDifferenceX = CGFLOAT_MAX;
         CGFloat oldDifferenceY = CGFLOAT_MAX;
@@ -176,69 +194,74 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         for (id pathObject in self.pathsArray) {
             if ([pathObject isKindOfClass:[JotTouchBezier class]]) {
                 JotTouchBezier *path = (JotTouchBezier*)pathObject;
+                CGPoint pathStartPoint = [self translatePointPercentageForPoint:path.startPointPercent];
+                CGPoint pathEndPoint = [self translatePointPercentageForPoint:path.endPointPercent];
                 // if the path is not a straight line or is our current path, ignore it
                 if (path.straightLine && path != self.bezierPath) {
-                    if ([self isAxis:touchPoint.x closeToAxis:path.startPoint.x]) {
-                        CGFloat newDifference = fabs(touchPoint.x - path.startPoint.x);
+                    if ([self isAxis:touchPoint.x closeToAxis:pathStartPoint.x]) {
+                        CGFloat newDifference = fabs(touchPoint.x - pathStartPoint.x);
                         if (newDifference < oldDifferenceX) {
                             oldDifferenceX = newDifference;
-                            snappedPoint.x = path.startPoint.x;
+                            snappedPoint.x = path.startPointPercent.x;
                         }
                     }
-                    if ([self isAxis:touchPoint.x closeToAxis:path.endPoint.x]) {
-                        CGFloat newDifference = fabs(touchPoint.x - path.endPoint.x);
+                    if ([self isAxis:touchPoint.x closeToAxis:pathEndPoint.x]) {
+                        CGFloat newDifference = fabs(touchPoint.x - pathEndPoint.x);
                         if (newDifference < oldDifferenceX) {
                             oldDifferenceX = newDifference;
-                            snappedPoint.x = path.endPoint.x;
+                            snappedPoint.x = path.endPointPercent.x;
                         }
                     }
-                    if ([self isAxis:touchPoint.y closeToAxis:path.startPoint.y]) {
-                        CGFloat newDifference = fabs(touchPoint.y - path.startPoint.y);
+                    if ([self isAxis:touchPoint.y closeToAxis:pathStartPoint.y]) {
+                        CGFloat newDifference = fabs(touchPoint.y - pathStartPoint.y);
                         if (newDifference < oldDifferenceY) {
                             oldDifferenceY = newDifference;
-                            snappedPoint.y = path.startPoint.y;
+                            snappedPoint.y = path.startPointPercent.y;
                         }
                     }
-                    if ([self isAxis:touchPoint.y closeToAxis:path.endPoint.y]) {
-                        CGFloat newDifference = fabs(touchPoint.y - path.endPoint.y);
+                    if ([self isAxis:touchPoint.y closeToAxis:pathEndPoint.y]) {
+                        CGFloat newDifference = fabs(touchPoint.y - pathEndPoint.y);
                         if (newDifference < oldDifferenceY) {
                             oldDifferenceY = newDifference;
-                            snappedPoint.y = path.endPoint.y;
+                            snappedPoint.y = path.endPointPercent.y;
                         }
                     }
                 }
             }
-            
+
         }
-        self.bezierPath.endPoint = snappedPoint;
+        self.bezierPath.endPointPercent = snappedPoint;
         [self setNeedsDisplay];
         return;
     }
     
     self.pointsCounter += 1;
-    [self.pointsArray addObject:[JotTouchPoint withPoint:touchPoint]];
+    [self.pointsArray addObject:[JotTouchPoint withPoint:touchPoint inFrame:self.frame]];
     
     if (self.pointsCounter == 4) {
         
-        self.pointsArray[3] = [JotTouchPoint withPoint:CGPointMake(([self.pointsArray[2] CGPointValue].x + [self.pointsArray[4] CGPointValue].x)/2.f,
-                                                                   ([self.pointsArray[2] CGPointValue].y + [self.pointsArray[4] CGPointValue].y)/2.f)];
+        CGPoint fourthPoint = CGPointMake(([self.pointsArray[2] CGPointValueInFrame:self.frame].x + [self.pointsArray[4] CGPointValueInFrame:self.frame].x)/2.f,
+                                          ([self.pointsArray[2] CGPointValueInFrame:self.frame].y + [self.pointsArray[4] CGPointValueInFrame:self.frame].y)/2.f);
+        self.pointsArray[3] = [JotTouchPoint withPoint:fourthPoint inFrame:self.frame];
         
-        self.bezierPath.startPoint = [self.pointsArray[0] CGPointValue];
-        self.bezierPath.endPoint = [self.pointsArray[3] CGPointValue];
-        self.bezierPath.controlPoint1 = [self.pointsArray[1] CGPointValue];
-        self.bezierPath.controlPoint2 = [self.pointsArray[2] CGPointValue];
+        self.bezierPath.startPointPercent = self.pointsArray[0].pointPercent;
+        self.bezierPath.endPointPercent = self.pointsArray[3].pointPercent;
+        self.bezierPath.controlPoint1Percent = self.pointsArray[1].pointPercent;
+        self.bezierPath.controlPoint2Percent = self.pointsArray[2].pointPercent;
         
         if (self.constantStrokeWidth) {
-            self.bezierPath.startWidth = self.strokeWidth;
-            self.bezierPath.endWidth = self.strokeWidth;
+            self.bezierPath.startWidthPercent = self.strokeWidth / CGRectGetWidth(self.frame);
+            self.bezierPath.endWidthPercent = self.strokeWidth / CGRectGetWidth(self.frame);
         } else {
-            CGFloat velocity = [(JotTouchPoint *)self.pointsArray[3] velocityFromPoint:(JotTouchPoint *)self.pointsArray[0]];
+            JotTouchPoint *firstPoint = self.pointsArray[0];
+            JotTouchPoint *fourthPoint = self.pointsArray[3];
+            CGFloat velocity = [firstPoint velocityFromPoint:fourthPoint inFrame:self.frame];
             velocity = (kJotVelocityFilterWeight * velocity) + ((1.f - kJotVelocityFilterWeight) * self.lastVelocity);
             
             CGFloat strokeWidth = [self strokeWidthForVelocity:velocity];
             
-            self.bezierPath.startWidth = self.lastWidth;
-            self.bezierPath.endWidth = strokeWidth;
+            self.bezierPath.startWidthPercent = self.lastWidth / CGRectGetWidth(self.frame);
+            self.bezierPath.endWidthPercent = strokeWidth / CGRectGetWidth(self.frame);
             
             self.lastWidth = strokeWidth;
             self.lastVelocity = velocity;
@@ -264,7 +287,7 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     self.lastWidth = self.strokeWidth;
     if (self.pointsArray.count == 1 && [[self.pointsArray lastObject] isKindOfClass:[JotTouchPoint class]]) {
         JotTouchPoint *touchPoint = [self.pointsArray lastObject];
-        touchPoint.strokeWidth = self.strokeWidth;
+        touchPoint.strokeWidthPercent = self.strokeWidth / CGRectGetWidth(self.frame);
         touchPoint.strokeColor = self.strokeColor;
         [self.pathsArray addObject:touchPoint];
         [self setNeedsDisplay];
@@ -276,7 +299,7 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 
 - (void)drawRect:(CGRect)rect
 {
-    [self drawAllPaths];
+    [self drawAllPathsInFrame:rect];
 }
 
 - (CGFloat)strokeWidthForVelocity:(CGFloat)velocity
@@ -320,7 +343,7 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     CGFloat scale = size.width / CGRectGetWidth(self.bounds);
     
     UIGraphicsBeginImageContextWithOptions(self.bounds.size, NO, scale);
-    [self drawAllPaths];
+    [self drawAllPathsInFrame:CGRectMake(0, 0, size.width, size.height)];
     UIImage *pathsImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     if (!backgroundImage) {
@@ -350,15 +373,16 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
                          orientation:drawnImage.imageOrientation];
 }
 
-- (void)drawAllPaths
+- (void)drawAllPathsInFrame:(CGRect)frame
 {
     for (NSObject *path in self.pathsArray) {
         if ([path isKindOfClass:[JotTouchBezier class]]) {
-            [(JotTouchBezier *)path jotDrawBezier];
+            [(JotTouchBezier *)path jotDrawBezierInFrame:frame];
         } else if ([path isKindOfClass:[JotTouchPoint class]]) {
-            [[(JotTouchPoint *)path strokeColor] setFill];
-            [JotTouchBezier jotDrawBezierPoint:[(JotTouchPoint *)path CGPointValue]
-                                     withWidth:[(JotTouchPoint *)path strokeWidth]];
+            JotTouchPoint *touchPoint = (JotTouchPoint*)path;
+            [[touchPoint strokeColor] setFill];
+            CGPoint originalPoint = [touchPoint CGPointValueInFrame:frame];
+            [JotTouchBezier jotDrawBezierPoint:originalPoint withWidth:touchPoint.strokeWidthPercent inFrame:frame];
         }
     }
 }

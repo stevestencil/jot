@@ -14,6 +14,6 @@
 @property (nonatomic, assign) CGFloat gridSize;
 @property (nonatomic, strong) UIColor *gridColor;
 
-- (UIImage *)drawImage;
+- (UIImage *)drawImageForSize:(CGSize)size;
 
 @end

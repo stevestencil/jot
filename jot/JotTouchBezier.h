@@ -17,32 +17,32 @@
 /**
  *  The start point of the cubic bezier path.
  */
-@property (nonatomic, assign) CGPoint startPoint;
+@property (nonatomic, assign) CGPoint startPointPercent;
 
 /**
  *  The end point of the cubic bezier path.
  */
-@property (nonatomic, assign) CGPoint endPoint;
+@property (nonatomic, assign) CGPoint endPointPercent;
 
 /**
  *  The first control point of the cubic bezier path.
  */
-@property (nonatomic, assign) CGPoint controlPoint1;
+@property (nonatomic, assign) CGPoint controlPoint1Percent;
 
 /**
  *  The second control point of the cubic bezier path.
  */
-@property (nonatomic, assign) CGPoint controlPoint2;
+@property (nonatomic, assign) CGPoint controlPoint2Percent;
 
 /**
  *  The starting width of the cubic bezier path.
  */
-@property (nonatomic, assign) CGFloat startWidth;
+@property (nonatomic, assign) CGFloat startWidthPercent;
 
 /**
  *  The ending width of the cubic bezier path.
  */
-@property (nonatomic, assign) CGFloat endWidth;
+@property (nonatomic, assign) CGFloat endWidthPercent;
 
 /**
  *  The stroke color of the cubic bezier path.
@@ -72,7 +72,7 @@
  *  strokeColor and transitioning from the start width to the end width
  *  along the length of the curve.
  */
-- (void)jotDrawBezier;
+- (void)jotDrawBezierInFrame:(CGRect)frame;
 
 /**
  *  Draws a single circle at the given point in the current graphics context,
@@ -81,6 +81,6 @@
  *  @param point       The CGPoint to use as the center of the circle to be drawn.
  *  @param width       The diameter of the circle to be drawn at the given point.
  */
-+ (void)jotDrawBezierPoint:(CGPoint)point withWidth:(CGFloat)width;
++ (void)jotDrawBezierPoint:(CGPoint)point withWidth:(CGFloat)width inFrame:(CGRect)frame;
 
 @end

@@ -26,6 +26,7 @@
 @property (nonatomic, strong) UILongPressGestureRecognizer *longPressRecognizer;
 @property (nonatomic, strong, readwrite) JotDrawingContainer *drawingContainer;
 @property (nonatomic, strong) JotDrawView *drawView;
+@property (nonatomic, strong) UIImageView *backgroundImageView;
 //@property (nonatomic, strong) JotTextEditView *textEditView;
 //@property (nonatomic, strong) JotTextView *textView;
 @property (nonatomic, strong) JotMovableViewContainer *movableView;
@@ -51,6 +52,11 @@
         
         JotGridView *gridView = [[JotGridView alloc] init];
         self.gridView = gridView;
+        
+        UIImageView *backgroundImageView = [UIImageView new];
+        backgroundImageView.contentMode = UIViewContentModeScaleAspectFit;
+        backgroundImageView.hidden = YES;
+        self.backgroundImageView = backgroundImageView;
         
 //        _font = self.textView.font;
 //        self.textEditView.font = self.font;
@@ -101,7 +107,12 @@
     
     [self.view addSubview:self.gridView];
     [self.gridView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.edges.equalTo(self);
+        make.edges.equalTo(self.view);
+    }];
+    
+    [self.view addSubview:self.backgroundImageView];
+    [self.backgroundImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.equalTo(self.view);
     }];
     
     [self.view addSubview:self.movableView];
@@ -284,6 +295,11 @@
     }
 }
 
+- (void)setBackgroundImage:(UIImage *)image {
+    self.backgroundImageView.image = image;
+    self.backgroundImageView.hidden = !image;
+}
+
 #pragma mark - Undo
 
 - (void)clearAll
@@ -300,12 +316,12 @@
 
 - (void) undo {
     id lastView = [self.viewsInEditOrder lastObject];
-    [self.viewsInEditOrder removeLastObject];
     if ([lastView isKindOfClass:[JotMovableViewContainer class]]) {
-        [(JotMovableView*)lastView undo];
+        [(JotMovableViewContainer*)lastView undo];
     } else if ([lastView isKindOfClass:[JotDrawView class]]) {
-        [(JotMovableView*)lastView undo];
+        [(JotDrawView*)lastView undo];
     }
+    [self.viewsInEditOrder removeLastObject];
 }
 
 - (void)clearText
@@ -320,7 +336,7 @@
 
 #pragma mark - Movable Views
 
-- (void)addBackgroundImage:(UIImage *)image {
+- (void)addMovableImage:(UIImage *)image {
     [self.movableView addImageView:image];
 }
 
@@ -361,15 +377,37 @@
 
 #pragma mark - Output UIImage
 
+- (UIImage*) drawImageOnBackgroundImage:(UIImage*)image {
+    if (!self.backgroundImageView.image) {
+        return image;
+    }
+//    CGSize size = CGSizeMake(CGRectGetWidth(self.backgroundImageView.frame), CGRectGetHeight(self.backgroundImageView.frame));
+    UIGraphicsBeginImageContextWithOptions(self.view.frame.size, NO, 1.0f);
+    [image drawInRect:CGRectMake(0, 0, CGRectGetWidth(self.backgroundImageView.frame), CGRectGetHeight(self.backgroundImageView.frame))];
+    CGFloat aspectRatio = self.backgroundImageView.image.size.width / self.backgroundImageView.image.size.height;
+    CGSize size = CGSizeMake(CGRectGetWidth(self.backgroundImageView.frame), CGRectGetWidth(self.backgroundImageView.frame) / aspectRatio);
+    if (size.height > CGRectGetHeight(self.backgroundImageView.frame)) {
+        size = CGSizeMake(CGRectGetHeight(self.backgroundImageView.frame) * aspectRatio, CGRectGetHeight(self.backgroundImageView.frame));
+    }
+    CGPoint origin = CGPointMake(CGRectGetMidX(self.backgroundImageView.frame) - (size.width / 2), CGRectGetMidY(self.backgroundImageView.frame) - (size.height / 2));
+    CGRect imageFrame = CGRectMake(origin.x, origin.y, size.width, size.height);
+    [self.backgroundImageView.image drawInRect:imageFrame];
+    UIImage *drawnImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return drawnImage;
+}
+
 - (UIImage *)drawOnImage:(UIImage *)image
 {
     [self.movableView cancelEditing];
     UIImage *drawImage;
     if (!image) {
-        drawImage = self.gridView.hidden ? nil : [self.gridView drawImage];
+        drawImage = self.gridView.hidden ? nil : [self.gridView drawImageForSize:self.drawingContainer.frame.size];
+        drawImage = [self drawImageOnBackgroundImage:drawImage];
         drawImage = [self.movableView renderImageOnImage:drawImage];
         drawImage = [self.drawView drawOnImage:drawImage];
     } else {
+        drawImage = [self drawImageOnBackgroundImage:drawImage];
         drawImage = [self.drawView drawOnImage:image];
     }
     return drawImage;
@@ -378,7 +416,8 @@
 
 - (UIImage *)renderImage
 {
-    return [self renderImageWithScale:1.f];
+    return [self drawOnImage:nil];
+//    return [self renderImageWithScale:1.f];
 }
 
 - (UIImage *)renderImageOnColor:(UIColor *)color
@@ -405,7 +444,7 @@
     if (self.gridView.hidden) {
         return [self.drawView renderDrawingWithSize:size];
     } else {
-        UIImage *gridImage = [self.gridView drawImage];
+        UIImage *gridImage = [self.gridView drawImageForSize:size];
         return  [self.drawView drawOnImage:gridImage];
     }
 }

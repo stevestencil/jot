@@ -20,7 +20,7 @@
 /**
  *  The CGPoint where the touch event occurred.
  */
-@property (nonatomic, assign) CGPoint point;
+@property (nonatomic, assign) CGPoint pointPercent;
 
 /**
  *  The timestamp of the touch event, used later to calculate the
@@ -37,7 +37,7 @@
 /**
  *  The stroke width to use for drawing this as a single-touch-point dot.
  */
-@property (nonatomic, assign) CGFloat strokeWidth;
+@property (nonatomic, assign) CGFloat strokeWidthPercent;
 
 /**
  *  Returns an instance of JotTouchPoint with the given CGPoint
@@ -46,7 +46,7 @@
  *
  *  @return An instance of JotTouchPoint
  */
-+ (instancetype)withPoint:(CGPoint)point;
++ (instancetype)withPoint:(CGPoint)point inFrame:(CGRect)frame;
 
 /**
  *  Calculates the velocity between two points, based on their locations
@@ -56,13 +56,13 @@
  *
  *  @return The velocity between the two points
  */
-- (CGFloat)velocityFromPoint:(JotTouchPoint *)point;
+- (CGFloat)velocityFromPoint:(JotTouchPoint *)point inFrame:(CGRect)frame;
 
 /**
  *  The CGPoint representing the location of the touch event for this JotTouchPoint.
  *
  *  @return The CGPoint value of this JotTouchPoint
  */
-- (CGPoint)CGPointValue;
+- (CGPoint)CGPointValueInFrame:(CGRect)frame;
 
 @end
