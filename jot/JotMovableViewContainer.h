@@ -25,8 +25,8 @@
 - (JotMovableView*) handleTapGesture:(UITapGestureRecognizer*)recognizer;
 - (JotMovableView*) handleLongPressGesture:(UILongPressGestureRecognizer *)recognizer;
 - (JotMovableView*) handlePanGesture:(UIPanGestureRecognizer*)recognizer;
-- (void) handlePinchGesture:(UIPinchGestureRecognizer*)recognizer;
-- (void) handleRotateGesture:(UIRotationGestureRecognizer*)recognizer;
+- (JotMovableView*) handlePinchGesture:(UIPinchGestureRecognizer*)recognizer;
+- (JotMovableView*) handleRotateGesture:(UIRotationGestureRecognizer*)recognizer;
 
 - (UIImage*) renderImage;
 - (UIImage*) renderImageOnImage:(UIImage*)image;

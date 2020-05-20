@@ -290,8 +290,8 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         touchPoint.strokeWidthPercent = self.strokeWidth / CGRectGetWidth(self.frame);
         touchPoint.strokeColor = self.strokeColor;
         [self.pathsArray addObject:touchPoint];
-        [self setNeedsDisplay];
     }
+    [self setNeedsDisplay];
     [self.pathsCounts addObject:@(self.pathsArray.count)];
 }
 

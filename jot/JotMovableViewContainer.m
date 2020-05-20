@@ -202,13 +202,13 @@
     return [self handleMoveGesture:recognizer withOffset:CGPointMake(5.0, -5.0)];
 }
 
-- (void) handlePinchGesture:(UIPinchGestureRecognizer*)recognizer {
+- (JotMovableView *) handlePinchGesture:(UIPinchGestureRecognizer*)recognizer {
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
             self.movingView = [self imageViewAtPoint:point] ? : self.movingView;
             if (!self.movingView || self.movingView.isEditing) {
-                return;
+                return nil;
             }
             self.referenceOffset = CGPointMake(self.movingView.center.x - point.x,
                                                self.movingView.center.y - point.y);
@@ -224,7 +224,7 @@
             
         case UIGestureRecognizerStateChanged: {
             if (!self.movingView || self.movingView.isEditing) {
-                return;
+                return nil;
             }
             CGPoint point = [recognizer locationInView:self];
             CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
@@ -243,15 +243,16 @@
         default:
             break;
     }
+    return self.movingView;
 }
 
-- (void) handleRotateGesture:(UIRotationGestureRecognizer*)recognizer {
+- (JotMovableView *) handleRotateGesture:(UIRotationGestureRecognizer*)recognizer {
     switch (recognizer.state) {
         case UIGestureRecognizerStateBegan: {
             CGPoint point = [recognizer locationInView:self];
             self.movingView = [self imageViewAtPoint:point] ? : self.movingView;
             if (!self.movingView || self.movingView.isEditing) {
-                return;
+                return nil;
             }
             self.referenceOffset = CGPointMake(self.movingView.center.x - point.x,
                                                self.movingView.center.y - point.y);
@@ -263,7 +264,7 @@
             
         case UIGestureRecognizerStateChanged: {
             if (!self.movingView || self.movingView.isEditing) {
-                return;
+                return nil;
             }
             CGPoint point = [recognizer locationInView:self];
             CGPoint newCenter = CGPointMake(point.x + self.referenceOffset.x,
@@ -286,6 +287,7 @@
         default:
             break;
     }
+    return self.movingView;
 }
 
 #pragma mark - Image Render

@@ -163,9 +163,7 @@
         }
         self.drawingContainer.multipleTouchEnabled =
         self.tapRecognizer.enabled =
-        self.panRecognizer.enabled =
-        self.pinchRecognizer.enabled =
-        self.rotationRecognizer.enabled = (state == JotViewStateText) || (state == JotViewStateImage);
+        self.panRecognizer.enabled = (state == JotViewStateText) || (state == JotViewStateImage);
         
         if (state != JotViewStateImage && state != JotViewStateText) {
             [self.movableView cancelEditing];
@@ -338,6 +336,7 @@
 
 - (void)addMovableImage:(UIImage *)image {
     [self.movableView addImageView:image];
+    self.state = JotViewStateImage;
 }
 
 - (void)addTextViewWithText:(NSString *)text {
@@ -488,10 +487,13 @@
 }
 
 - (void)handlePinchGesture:(UIPinchGestureRecognizer*)recognizer {
-    switch (self.state) {
-        case JotViewStateImage:
-        case JotViewStateText:
-            [self.movableView handlePinchGesture:(UIPinchGestureRecognizer*)recognizer];
+    JotMovableView *view = [self.movableView handlePinchGesture:recognizer];
+    switch (view.type) {
+        case JotMovableViewContainerTypeImage:
+            self.state = JotViewStateImage;
+            break;
+        case JotMovableViewContainerTypeText:
+            self.state = JotViewStateText;
             break;
         default:
             break;
@@ -499,10 +501,13 @@
 }
 
 - (void) handleRotateGesture:(UIRotationGestureRecognizer*)recognizer {
-    switch (self.state) {
-        case JotViewStateImage:
-        case JotViewStateText:
-            [self.movableView handleRotateGesture:(UIRotationGestureRecognizer*)recognizer];
+    JotMovableView *view = [self.movableView handleRotateGesture:recognizer];
+    switch (view.type) {
+        case JotMovableViewContainerTypeImage:
+            self.state = JotViewStateImage;
+            break;
+        case JotMovableViewContainerTypeText:
+            self.state = JotViewStateText;
             break;
         default:
             break;
@@ -550,8 +555,8 @@
 
 - (void)jotDrawingContainerTouchEnded
 {
-    [self.viewsInEditOrder addObject:self.drawView];
     if (self.state == JotViewStateDrawing || self.state == JotViewStateStraightLineDrawing || self.state == JotViewStateErase) {
+        [self.viewsInEditOrder addObject:self.drawView];
         [self.drawView drawTouchEnded];
     }
     if ([self.delegate respondsToSelector:@selector(jotViewControllerDidEndDrawing:)]) {
