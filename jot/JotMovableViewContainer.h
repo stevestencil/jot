@@ -33,6 +33,7 @@
 - (void)addImageView:(UIImage*)image;
 - (void) addTextViewWithText:(NSString*)text;
 - (void) clearAll;
+- (void) clearAllWithType:(JotMovableViewContainerType)type;
 - (void) cancelEditing;
 - (void) undo;
 - (void) setFontColor:(UIColor*)fontColor;

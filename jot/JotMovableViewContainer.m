@@ -18,7 +18,7 @@
 @property (nonatomic, assign) CGAffineTransform currentRotateTransform;
 @property (nonatomic, strong) UIPinchGestureRecognizer *activePinchRecognizer;
 @property (nonatomic, strong) UIRotationGestureRecognizer *activeRotationRecognizer;
-@property (nonatomic, strong) NSMutableArray<JotMovableView*> *viewsLastEdited;
+@property (nonatomic, strong) NSMutableArray<id> *viewsLastEdited;
 @property (nonatomic, strong) UIColor *fontColor;
 
 @end
@@ -51,25 +51,71 @@
 - (void)clearAll
 {
     self.scale = 1.f;
+    NSMutableArray *removedViews = [NSMutableArray new];
     while (self.movableViews.count) {
-        JotMovableView *imageView = [self.movableViews firstObject];
-        [imageView removeFromSuperview];
-        [self.movableViews removeObject:imageView];
+        JotMovableView *view = [self.movableViews firstObject];
+        [view captureUndoObject];
+        [removedViews addObject:view];
+        [view removeFromSuperview];
+        [self.movableViews removeObject:view];
     }
-    [UIView transitionWithView:self duration:0.2f
-                       options:UIViewAnimationOptionTransitionCrossDissolve
-                    animations:^{
-                        [self setNeedsDisplay];
-                    }
-                    completion:nil];
+    if (removedViews.count) {
+        [self.viewsLastEdited addObject:removedViews];
+        [UIView transitionWithView:self duration:0.2f
+                           options:UIViewAnimationOptionTransitionCrossDissolve
+                        animations:^{
+                            [self setNeedsDisplay];
+                        }
+                        completion:nil];
+        if ([self.delegate respondsToSelector:@selector(jotMovableViewContainerUndoSnapshot:)]) {
+            [self.delegate jotMovableViewContainerUndoSnapshot:self];
+        }
+    }
+}
+
+- (void)clearAllWithType:(JotMovableViewContainerType)type {
+    self.scale = 1.f;
+    NSArray *array = [NSArray arrayWithArray:self.movableViews];
+    NSMutableArray *removedViews = [NSMutableArray new];
+    for (JotMovableView *view in array) {
+        if (view.type == type) {
+            [view captureUndoObject];
+            [removedViews addObject:view];
+            [view removeFromSuperview];
+            [self.movableViews removeObject:view];
+        }
+    }
+    if (removedViews.count) {
+        [self.viewsLastEdited addObject:removedViews];
+        [UIView transitionWithView:self duration:0.2f
+                           options:UIViewAnimationOptionTransitionCrossDissolve
+                        animations:^{
+                            [self setNeedsDisplay];
+                        }
+                        completion:nil];
+        if ([self.delegate respondsToSelector:@selector(jotMovableViewContainerUndoSnapshot:)]) {
+            [self.delegate jotMovableViewContainerUndoSnapshot:self];
+        }
+    }
 }
 
 - (void) undo {
-    JotMovableView *lastEdited = [self.viewsLastEdited lastObject];
-    if ([lastEdited undo]) {
-        self.movingView = lastEdited;
-    } else {
-        [self.movableViews removeObject:lastEdited];
+    id object = [self.viewsLastEdited lastObject];
+    if ([object isKindOfClass:[NSArray class]]) {
+        NSArray *array = (NSArray*)object;
+        for (JotMovableView *view in array) {
+            [self addSubview:view];
+            [self.movableViews addObject:view];
+            [view undo];
+        }
+        [self moveTextViewsToFront];
+    } else if ([object isKindOfClass:[JotMovableView class]]) {
+        JotMovableView *lastEdited = (JotMovableView*)object;
+        if ([lastEdited undo]) {
+            self.movingView = lastEdited;
+        } else {
+            [self.movableViews removeObject:lastEdited];
+        }
     }
     [self.viewsLastEdited removeLastObject];
     [UIView transitionWithView:self duration:0.2f

@@ -184,12 +184,8 @@ typedef NS_ENUM(NSUInteger, JotViewState){
  */
 - (void)clearDrawing;
 
-/**
- *  Clears only the text, leaving the drawing alone.
- */
-- (void)clearText;
-
-- (void)clearImages;
+- (void)clearAllText;
+- (void)clearAllImages;
 
 - (void) setBackgroundImage:(UIImage*)image;
 - (void)addMovableImage:(UIImage*)image;

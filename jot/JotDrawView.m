@@ -20,7 +20,7 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 
 @property (nonatomic, assign) CGRect originalFrame;
 @property (nonatomic, strong) NSMutableArray *pathsArray;
-@property (nonatomic, strong) NSMutableArray<NSNumber*> *pathsCounts;
+@property (nonatomic, strong) NSMutableArray<id> *pathsCounts;
 @property (nonatomic, strong) JotTouchBezier *bezierPath;
 @property (nonatomic, strong) NSMutableArray<JotTouchPoint*> *pointsArray;
 @property (nonatomic, assign) NSUInteger pointsCounter;
@@ -66,10 +66,17 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 #pragma mark - Undo
 
 - (void) undo {
-    [self.pathsCounts removeLastObject];
-    NSInteger lastCount = [[self.pathsCounts lastObject] integerValue];
-    while (self.pathsArray.count > lastCount) {
-        [self.pathsArray removeLastObject];
+    id lastObject = [self.pathsCounts lastObject];
+    if ([lastObject isKindOfClass:[NSDictionary class]]) {
+        NSDictionary *object = [self.pathsCounts lastObject];
+        self.pathsArray = [object[@"pathsArray"] mutableCopy];
+        self.pathsCounts = [object[@"pathsCounts"] mutableCopy];
+    } else if ([lastObject isKindOfClass:[NSNumber class]]) {
+        [self.pathsCounts removeLastObject];
+        NSInteger lastCount = [[self.pathsCounts lastObject] integerValue];
+        while (self.pathsArray.count > lastCount) {
+            [self.pathsArray removeLastObject];
+        }
     }
     [UIView transitionWithView:self duration:0.2f
                        options:UIViewAnimationOptionTransitionCrossDissolve
@@ -81,8 +88,13 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
 
 - (void)clearDrawing
 {
+    NSDictionary *object = @{
+        @"pathsArray": [NSArray arrayWithArray:self.pathsArray],
+        @"pathsCounts": [NSArray arrayWithArray:self.pathsCounts]
+    };
     [self.pathsArray removeAllObjects];
     [self.pathsCounts removeAllObjects];
+    [self.pathsCounts addObject:object];
     
     self.bezierPath = nil;
     self.pointsCounter = 0;
@@ -96,6 +108,10 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
                         [self setNeedsDisplay];
                     }
                     completion:nil];
+    
+    if ([self.delegate respondsToSelector:@selector(jotDrawViewDidClear:)]) {
+        [self.delegate jotDrawViewDidClear:self];
+    }
 }
 
 #pragma mark - Properties

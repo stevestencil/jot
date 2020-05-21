@@ -17,12 +17,20 @@ typedef enum {
 
 @class JotDrawView;
 
+@protocol JotDrawViewDelegate <NSObject>
+
+- (void)jotDrawViewDidClear:(JotDrawView*)view;
+
+@end
+
 /**
  *  Private class to handle touch drawing. Change the properties
  *  in a JotViewController instance to configure this private class.
  */
 @interface JotDrawView : UIView
 
+
+@property (weak, nonatomic) id <JotDrawViewDelegate> delegate;
 
 @property (nonatomic) JotDrawViewMode mode;
 

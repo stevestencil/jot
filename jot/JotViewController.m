@@ -17,7 +17,7 @@
 //#import "JotMovableView.h"
 #import "JotGridView.h"
 
-@interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotDrawingContainerDelegate, JotMovableViewContainerDelegate>
+@interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotMovableViewContainerDelegate, JotDrawViewDelegate>
 
 @property (nonatomic, strong) UITapGestureRecognizer *tapRecognizer;
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchRecognizer;
@@ -42,11 +42,12 @@
     if ((self = [super init])) {
         
         _drawView = [JotDrawView new];
+        _drawView.delegate = self;
 //        _textEditView = [JotTextEditView new];
 //        _textEditView.delegate = self;
 //        _textView = [JotTextView new];
         _drawingContainer = [JotDrawingContainer new];
-        self.drawingContainer.delegate = self;
+                self.drawingContainer.delegate = self;
         _movableView = [JotMovableViewContainer new];
         self.movableView.delegate = self;
         
@@ -303,8 +304,7 @@
 - (void)clearAll
 {
     [self clearDrawing];
-    [self clearText];
-    [self clearImages];
+    [self.movableView clearAll];
 }
 
 - (void)clearDrawing
@@ -322,14 +322,13 @@
     [self.viewsInEditOrder removeLastObject];
 }
 
-- (void)clearText
+- (void)clearAllText
 {
-    self.textString = @"";
-//    [self.textView clearText];
+    [self.movableView clearAllWithType:JotMovableViewContainerTypeText];
 }
 
-- (void)clearImages {
-    [self.movableView clearAll];
+- (void)clearAllImages {
+    [self.movableView clearAllWithType:JotMovableViewContainerTypeImage];
 }
 
 #pragma mark - Movable Views
@@ -526,6 +525,12 @@
             }
         }
     }
+}
+
+#pragma mark - JotDrawViewDelegate
+
+- (void)jotDrawViewDidClear:(JotDrawView *)view {
+    [self.viewsInEditOrder addObject:self.drawView];
 }
 
 #pragma mark - JotDrawingContainer Delegate
