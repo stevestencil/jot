@@ -71,11 +71,18 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         NSDictionary *object = [self.pathsCounts lastObject];
         self.pathsArray = [object[@"pathsArray"] mutableCopy];
         self.pathsCounts = [object[@"pathsCounts"] mutableCopy];
-    } else if ([lastObject isKindOfClass:[NSNumber class]]) {
+    } else {
         [self.pathsCounts removeLastObject];
-        NSInteger lastCount = [[self.pathsCounts lastObject] integerValue];
-        while (self.pathsArray.count > lastCount) {
-            [self.pathsArray removeLastObject];
+        if ([[self.pathsCounts lastObject] isKindOfClass:[NSNumber class]]) {
+            NSInteger lastCount = [[self.pathsCounts lastObject] integerValue];
+            while (self.pathsArray.count > lastCount) {
+                [self.pathsArray removeLastObject];
+            }
+        } else {
+            [self.pathsArray removeAllObjects];
+            self.bezierPath = nil;
+            self.pointsCounter = 0;
+            [self.pointsArray removeAllObjects];
         }
     }
     [UIView transitionWithView:self duration:0.2f
