@@ -39,7 +39,7 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         self.backgroundColor = [UIColor clearColor];
                 
         _mode = JotDrawViewModeStandard;
-        _strokeWidth = 10.f;
+        _strokeWidth = 5.f;
         _strokeColor = [UIColor blackColor];
         
         _pathsArray = [NSMutableArray array];
@@ -316,6 +316,12 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     }
     [self setNeedsDisplay];
     [self.pathsCounts addObject:@(self.pathsArray.count)];
+}
+
+- (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+    [super touchesCancelled:touches withEvent:event];
+    [self touchesEnded:touches withEvent:event];
 }
 
 #pragma mark - Drawing

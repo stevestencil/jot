@@ -72,8 +72,8 @@ NSUInteger const kJotDrawStepsPerBezier = 300;
             y += ttt * endPoint.y;
             
             CGFloat pointWidth = ((self.startWidthPercent * CGRectGetWidth(frame)) + (ttt * widthDelta)) / CGRectGetWidth(frame);
-            CGPoint translatedPoint = CGPointMake(x * CGRectGetWidth(frame), y * CGRectGetHeight(frame));
-            [self.class jotDrawBezierPoint:CGPointMake(x, y) withWidth:pointWidth inFrame:frame];
+            CGPoint translatedPoint = CGPointMake(x / CGRectGetWidth(frame), y / CGRectGetHeight(frame));
+            [self.class jotDrawBezierPoint:translatedPoint withWidth:pointWidth inFrame:frame];
         }
     }
 }
