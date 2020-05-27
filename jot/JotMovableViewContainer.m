@@ -171,6 +171,7 @@
     [self.viewsLastEdited addObject:containerView];
     self.movingView = containerView;
     [self moveTextViewsToFront];
+    containerView.isEditing = YES;
     if ([self.delegate respondsToSelector:@selector(jotMovableViewContainerUndoSnapshot:)]) {
         [self.delegate jotMovableViewContainerUndoSnapshot:self];
     }
@@ -404,7 +405,7 @@
     [_movingView setSelected:YES];
 }
 
-- (NSMutableArray<JotMovableView *> *)viewsLastEdited {
+- (NSMutableArray<id> *)viewsLastEdited {
     if (!_viewsLastEdited) {
         _viewsLastEdited = [NSMutableArray new];
     }
