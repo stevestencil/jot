@@ -33,4 +33,10 @@
     [self.delegate jotDrawingContainerTouchEnded];
 }
 
+-(void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event
+{
+    [super touchesCancelled:touches withEvent:event];
+    [self.delegate jotDrawingContainerTouchEnded];
+}
+
 @end
