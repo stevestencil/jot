@@ -164,8 +164,11 @@
         }
         self.drawingContainer.multipleTouchEnabled =
         self.tapRecognizer.enabled =
+        self.pinchRecognizer.enabled =
+        self.rotationRecognizer.enabled =
+        self.longPressRecognizer.enabled =
         self.panRecognizer.enabled = (state == JotViewStateText) || (state == JotViewStateImage);
-        
+                
         if (state != JotViewStateImage && state != JotViewStateText) {
             [self.movableView cancelEditing];
         }
