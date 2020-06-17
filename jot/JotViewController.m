@@ -145,6 +145,14 @@
     [self.drawingContainer addGestureRecognizer:self.longPressRecognizer];
 }
 
+- (void)setGesturesEnabled:(BOOL)enabled {
+     self.tapRecognizer.enabled =
+     self.pinchRecognizer.enabled =
+     self.rotationRecognizer.enabled =
+     self.longPressRecognizer.enabled =
+     self.panRecognizer.enabled = enabled;
+}
+
 #pragma mark - Properties
 
 - (void)setState:(JotViewState)state
