@@ -410,8 +410,7 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
         } else if ([path isKindOfClass:[JotTouchPoint class]]) {
             JotTouchPoint *touchPoint = (JotTouchPoint*)path;
             [[touchPoint strokeColor] setFill];
-            CGPoint originalPoint = [touchPoint CGPointValueInFrame:frame];
-            [JotTouchBezier jotDrawBezierPoint:originalPoint withWidth:touchPoint.strokeWidthPercent inFrame:frame];
+            [JotTouchBezier jotDrawBezierPoint:touchPoint.pointPercent withWidth:touchPoint.strokeWidthPercent inFrame:frame];
         }
     }
 }

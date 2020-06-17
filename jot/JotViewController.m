@@ -17,7 +17,7 @@
 //#import "JotMovableView.h"
 #import "JotGridView.h"
 
-@interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotMovableViewContainerDelegate, JotDrawViewDelegate>
+@interface JotViewController () <UIGestureRecognizerDelegate, JotTextEditViewDelegate, JotMovableViewContainerDelegate, JotDrawViewDelegate, JotDrawingContainerDelegate>
 
 @property (nonatomic, strong) UITapGestureRecognizer *tapRecognizer;
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchRecognizer;
@@ -43,9 +43,6 @@
         
         _drawView = [JotDrawView new];
         _drawView.delegate = self;
-//        _textEditView = [JotTextEditView new];
-//        _textEditView.delegate = self;
-//        _textView = [JotTextView new];
         _drawingContainer = [JotDrawingContainer new];
                 self.drawingContainer.delegate = self;
         _movableView = [JotMovableViewContainer new];
@@ -162,11 +159,9 @@
             && [self.delegate respondsToSelector:@selector(jotViewController:isEditingText:)]) {
             [self.delegate jotViewController:self isEditingText:YES];
         }
+        
         self.drawingContainer.multipleTouchEnabled =
         self.tapRecognizer.enabled =
-        self.pinchRecognizer.enabled =
-        self.rotationRecognizer.enabled =
-        self.longPressRecognizer.enabled =
         self.panRecognizer.enabled = (state == JotViewStateText) || (state == JotViewStateImage);
                 
         if (state != JotViewStateImage && state != JotViewStateText) {
@@ -602,7 +597,7 @@
     }
 }
 
-#pragma mark - JotImageViewDelegate
+#pragma mark - JotMovableViewContainerDelegate
 
 - (void) jotMovableViewContainerUndoSnapshot:(JotMovableViewContainer *)jotImageView {
     [self.viewsInEditOrder addObject:jotImageView];
