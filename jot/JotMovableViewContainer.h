@@ -37,5 +37,6 @@
 - (void) cancelEditing;
 - (void) undo;
 - (void) setFontColor:(UIColor*)fontColor;
+- (BOOL) containsEdits;
 
 @end

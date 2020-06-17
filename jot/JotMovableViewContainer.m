@@ -46,6 +46,10 @@
     self.movingView = nil;
 }
 
+- (BOOL)containsEdits {
+    return !!self.movableViews.count;
+}
+
 #pragma mark - Undo
 
 - (void)clearAll

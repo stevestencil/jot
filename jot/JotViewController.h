@@ -194,6 +194,8 @@ typedef NS_ENUM(NSUInteger, JotViewState){
 
 - (void)setGesturesEnabled:(BOOL)enabled;
 
+- (BOOL) containsEdits;
+
 /**
  *  Overlays the drawing and text on the given background image at the full
  *  resolution of the image.

@@ -153,6 +153,10 @@
      self.panRecognizer.enabled = enabled;
 }
 
+- (BOOL)containsEdits {
+    return [self.drawView containsEdits] || [self.movableView containsEdits] || !self.gridView.hidden;
+}
+
 #pragma mark - Properties
 
 - (void)setState:(JotViewState)state

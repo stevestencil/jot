@@ -129,4 +129,6 @@ typedef enum {
  */
 - (UIImage *)renderDrawingWithSize:(CGSize)size;
 
+- (BOOL) containsEdits;
+
 @end

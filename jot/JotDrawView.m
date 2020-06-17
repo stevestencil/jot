@@ -63,6 +63,10 @@ CGFloat const kJotSnappedLineTolerance = 15.0f;
     self.originalFrame = self.frame;
 }
 
+- (BOOL)containsEdits {
+    return !!self.pathsArray.count;
+}
+
 #pragma mark - Undo
 
 - (void) undo {
